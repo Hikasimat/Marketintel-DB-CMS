@@ -85,6 +85,12 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         item_validator=is_http_origin,
         problem="must be a comma-separated list of scheme://host[:port] origins",
     )
+    csrf_trusted_origins = env.list(
+        "CSRF_TRUSTED_ORIGINS",
+        default=[] if is_prod else ["http://localhost:8000", "http://127.0.0.1:8000", "https://*.trycloudflare.com"],
+        item_validator=is_http_origin,
+        problem="must be a comma-separated list of scheme://host[:port] origins",
+    )
     trust_forwarded_proto = env.bool("TRUST_X_FORWARDED_PROTO", default=False)
     ssl_redirect = env.bool("SECURE_SSL_REDIRECT", default=is_prod)
     hsts_seconds = env.int("SECURE_HSTS_SECONDS", 31536000 if is_prod else 0, min_value=0)
@@ -302,6 +308,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "SESSION_COOKIE_SECURE": is_prod,
         "SESSION_COOKIE_HTTPONLY": True,
         "CSRF_COOKIE_SECURE": is_prod,
+        "CSRF_TRUSTED_ORIGINS": csrf_trusted_origins,
         "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https")
         if trust_forwarded_proto
         else None,
