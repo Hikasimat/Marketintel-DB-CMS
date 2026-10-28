@@ -1,0 +1,10 @@
+# Runtime dependencies. Each is justified in docs/engineering/dependencies.md.
+# Compile with: pip-compile --generate-hashes --strip-extras -o requirements/base.txt requirements/base.in
+Django>=5.2.8,<5.3
+djangorestframework>=3.18,<3.19
+drf-spectacular>=0.28,<1.0
+django-cors-headers>=4.6,<5
+psycopg[binary]>=3.2,<4
+celery>=5.5,<6
+redis>=5.2,<7
+gunicorn>=23,<24

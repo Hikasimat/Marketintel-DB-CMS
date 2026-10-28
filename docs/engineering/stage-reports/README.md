@@ -31,8 +31,8 @@ One report per stage: `stage-XX.md`. A stage may only start after the previous r
 | Stage | Name | Gate | Report |
 |-------|------|------|--------|
 | 0 | Discovery and requirements | PASS | [stage-00.md](stage-00.md) |
-| 1 | Project foundation | — | — |
-| 2 | Authentication, tenancy, audit | — | — |
+| 1 | Project foundation | PASS | [stage-01.md](stage-01.md) |
+| 2 | Authentication, tenancy, audit | IN PROGRESS | — |
 | 3 | Sites/domains and content | — | — |
 | 4 | SEO engine | — | — |
 | 5 | Search provider integrations | — | — |

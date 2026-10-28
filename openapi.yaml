@@ -1,0 +1,7 @@
+openapi: 3.0.3
+info:
+  title: Headless CMS API
+  version: 1.0.0
+  description: Standalone, API-only multi-tenant headless CMS backend.
+paths: {}
+components: {}

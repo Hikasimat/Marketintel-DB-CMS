@@ -1,0 +1,59 @@
+[project]
+name = "headless-cms-backend"
+version = "0.1.0"
+description = "Standalone, API-only multi-tenant headless CMS backend"
+requires-python = ">=3.12,<3.14"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "DJ", "SIM", "RUF", "PT", "C4"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "cms"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "cms.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "req(id): links a test to a requirement ID in docs/engineering/requirements-matrix.md",
+    "live: requires real external provider credentials; never runs by default",
+]
+
+[tool.coverage.run]
+source = ["apps", "cms"]
+branch = true
+omit = ["**/migrations/*", "cms/wsgi.py", "cms/asgi.py", "manage.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+ignore_missing_imports = false
+exclude = ["migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "drf_spectacular.*", "corsheaders.*", "redis.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "cms.settings.test"
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
