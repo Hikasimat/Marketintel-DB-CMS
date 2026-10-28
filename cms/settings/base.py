@@ -125,6 +125,8 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "drf_spectacular",
         "apps.common",
         "apps.accounts",
+        "apps.audit",
+        "apps.tenancy",
     ]
     if admin_enabled:
         installed_apps.insert(0, "django.contrib.admin")
@@ -205,6 +207,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
             },
             {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
             {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+            {"NAME": "apps.accounts.validators.PasswordComplexityValidator"},
         ],
         "LANGUAGE_CODE": "en-us",
         "TIME_ZONE": "UTC",
@@ -218,9 +221,19 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "DATA_UPLOAD_MAX_MEMORY_SIZE": 1_048_576,
         "DATA_UPLOAD_MAX_NUMBER_FIELDS": 1000,
         "FILE_UPLOAD_MAX_MEMORY_SIZE": 1_048_576,
+        # --- Authentication & JWT ---
+        "JWT_SECRET_KEY": secret_key,
+        "JWT_ACCESS_EXPIRATION_SECONDS": 900,
+        "JWT_REFRESH_EXPIRATION_SECONDS": 604800,
+        "JWT_ISSUER": "cms-backend",
+        "JWT_AUDIENCE": "cms-api",
+        "EXTERNAL_AUTH_ISSUERS": {},
         # --- DRF ---
         "REST_FRAMEWORK": {
-            "DEFAULT_AUTHENTICATION_CLASSES": [],
+            "DEFAULT_AUTHENTICATION_CLASSES": [
+                "apps.accounts.auth_backends.JWTAuthentication",
+                "apps.accounts.auth_backends.ExternalIssuerAuthentication",
+            ],
             # Secure default: every endpoint requires auth unless it opts out explicitly.
             "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
             "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

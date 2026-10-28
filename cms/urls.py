@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from django.conf import settings
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -18,6 +18,10 @@ urlpatterns = [
     path("health/ready", ReadyCheckView.as_view(), name="health_ready"),
     # OpenAPI v3 schema definition
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Core domain API routes
+    path("api/v1/", include("apps.accounts.urls")),
+    path("api/v1/", include("apps.tenancy.urls")),
+    path("api/v1/", include("apps.audit.urls")),
 ]
 
 # Interactive API documentation (enabled only in non-production or when explicitly configured)

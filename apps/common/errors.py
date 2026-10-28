@@ -33,6 +33,9 @@ def format_error_payload(
     }
 
 
+error_envelope = format_error_payload
+
+
 def exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
     """DRF custom exception handler returning the uniform error envelope."""
     request = context.get("request")
@@ -59,6 +62,9 @@ def exception_handler(exc: Exception, context: dict[str, Any]) -> Response | Non
             details = exc.detail
         elif isinstance(exc, exceptions.AuthenticationFailed):
             code = "authentication_failed"
+            if isinstance(exc.detail, dict):
+                code = str(exc.detail.get("code", "authentication_failed"))
+                message = str(exc.detail.get("message", message))
         elif isinstance(exc, exceptions.NotAuthenticated):
             code = "not_authenticated"
             message = "Authentication credentials were not provided."

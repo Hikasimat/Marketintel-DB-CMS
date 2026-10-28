@@ -61,3 +61,28 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+
+class RefreshTokenFamily(models.Model):
+    """Tracks refresh token lineages for rotation and token family reuse detection."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refresh_tokens")
+    family_id = models.UUIDField(default=uuid.uuid4, db_index=True)
+    current_jti = models.UUIDField(default=uuid.uuid4, db_index=True)
+    revoked = models.BooleanField(default=False, db_index=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "accounts_refresh_token_family"
+        ordering = ("-created_at",)
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["family_id", "revoked"]),
+        ]
+
+    def __str__(self) -> str:
+        status = "revoked" if self.revoked else "active"
+        return f"RefreshTokenFamily({self.family_id}, user={self.user_id}, status={status})"

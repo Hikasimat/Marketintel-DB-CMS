@@ -77,7 +77,12 @@ class Env:
         return default
 
     def int(
-        self, name: _Str, default: int, *, min_value: int | None = None, max_value: int | None = None
+        self,
+        name: _Str,
+        default: int,
+        *,
+        min_value: int | None = None,
+        max_value: int | None = None,
     ) -> int:
         raw = self._raw(name)
         if raw is None:
