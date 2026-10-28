@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any, cast
 
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -53,8 +54,8 @@ def resolve_workspace(request: Request, view: APIView) -> Workspace:
         # Non-members receive 404 (anti-enumeration, TEN-3)
         raise NotFound("Workspace not found.")
 
-    setattr(request, "workspace", workspace)
-    setattr(request, "workspace_membership", membership)
+    cast(Any, request).workspace = workspace
+    cast(Any, request).workspace_membership = membership
     return workspace
 
 
@@ -84,7 +85,7 @@ class RequireWorkspaceRole(permissions.BasePermission):
 
         # Non-members get 404 here
         resolve_workspace(request, view)
-        membership: WorkspaceMembership = getattr(request, "workspace_membership")
+        membership: WorkspaceMembership = cast(Any, request).workspace_membership
 
         if not membership.has_role(self.min_role):
             raise PermissionDenied(

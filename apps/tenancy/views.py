@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -74,8 +74,8 @@ class WorkspaceListCreateView(APIView):
                 user=user,
                 role=WorkspaceRole.OWNER,
             )
-            setattr(request, "workspace", workspace)
-            setattr(request, "workspace_membership", membership)
+            cast(Any, request).workspace = workspace
+            cast(Any, request).workspace_membership = membership
 
             record_audit_event(
                 action="workspace.created",

@@ -79,6 +79,71 @@ paths:
           description: Token successfully rotated
         '401':
           description: Token expired, invalid, or reused
+  /api/v1/public/sites/{site_slug}/articles/:
+    get:
+      operationId: public_sites_articles_list
+      description: Public read-only content delivery endpoint for published articles
+        (CT-4, CT-6).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicArticleList'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/articles/{article_slug}/:
+    get:
+      operationId: public_sites_articles_retrieve
+      description: Public read-only content delivery endpoint for a single published
+        article (CT-4, CT-6).
+      parameters:
+      - in: path
+        name: article_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicArticle'
+          description: ''
+        '404':
+          description: Article not found
   /api/v1/workspaces/:
     get:
       operationId: workspaces_list
@@ -225,6 +290,71 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAuditEventList'
           description: ''
+  /api/v1/workspaces/{workspace_id}/media/:
+    get:
+      operationId: workspaces_media_list
+      description: List or catalog media assets in a workspace.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMediaAssetList'
+          description: ''
+    post:
+      operationId: workspaces_media_create
+      description: List or catalog media assets in a workspace.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaAssetCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+        '400':
+          description: Validation error
   /api/v1/workspaces/{workspace_id}/members/:
     get:
       operationId: workspaces_members_list
@@ -336,8 +466,735 @@ paths:
       responses:
         '204':
           description: Member removed
+  /api/v1/workspaces/{workspace_id}/sites/:
+    get:
+      operationId: workspaces_sites_list
+      description: List or create sites in the target workspace.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Site'
+          description: ''
+    post:
+      operationId: workspaces_sites_create
+      description: List or create sites in the target workspace.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+          description: ''
+        '400':
+          description: Validation error
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/:
+    get:
+      operationId: workspaces_sites_retrieve
+      description: Retrieve, update, or delete a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+          description: ''
+        '404':
+          description: Site not found
+    patch:
+      operationId: workspaces_sites_partial_update
+      description: Retrieve, update, or delete a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSiteCreateRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+          description: ''
+    delete:
+      operationId: workspaces_sites_destroy
+      description: Retrieve, update, or delete a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: Site deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/:
+    get:
+      operationId: workspaces_sites_articles_list
+      description: List or create articles in a site.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArticleList'
+          description: ''
+    post:
+      operationId: workspaces_sites_articles_create
+      description: List or create articles in a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+        '400':
+          description: Validation error
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/:
+    get:
+      operationId: workspaces_sites_articles_retrieve
+      description: Retrieve, update, or delete an article.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+        '404':
+          description: Article not found
+    patch:
+      operationId: workspaces_sites_articles_partial_update
+      description: Retrieve, update, or delete an article.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedArticleCreateUpdateRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+    delete:
+      operationId: workspaces_sites_articles_destroy
+      description: Retrieve, update, or delete an article.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: Article deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/publish/:
+    post:
+      operationId: workspaces_sites_articles_publish_create
+      description: Publish an article and capture publication snapshot.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/versions/:
+    get:
+      operationId: workspaces_sites_articles_versions_list
+      description: List revision version history for an article.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleVersion'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/versions/{version_number}/restore/:
+    post:
+      operationId: workspaces_sites_articles_versions_restore_create
+      description: Restore an article's content from a prior revision version.
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: version_number
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+          description: ''
+        '404':
+          description: Version not found
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/domains/:
+    get:
+      operationId: workspaces_sites_domains_list
+      description: List or register custom domains for a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Domain'
+          description: ''
+    post:
+      operationId: workspaces_sites_domains_create
+      description: List or register custom domains for a site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+          description: ''
+        '400':
+          description: Validation error
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/domains/{domain_id}/:
+    get:
+      operationId: workspaces_sites_domains_retrieve
+      description: Retrieve or remove a custom domain.
+      parameters:
+      - in: path
+        name: domain_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+          description: ''
+        '404':
+          description: Domain not found
+    delete:
+      operationId: workspaces_sites_domains_destroy
+      description: Retrieve or remove a custom domain.
+      parameters:
+      - in: path
+        name: domain_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: Domain deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/domains/{domain_id}/verify/:
+    post:
+      operationId: workspaces_sites_domains_verify_create
+      description: Trigger DNS TXT verification for a custom domain.
+      parameters:
+      - in: path
+        name: domain_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainVerifyRequestRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+          description: ''
+        '400':
+          description: Verification failed
 components:
   schemas:
+    Article:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 200
+          pattern: ^[-a-zA-Z0-9_]+$
+        excerpt:
+          type: string
+        body:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        metadata: {}
+        author:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        versions_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - created_at
+      - id
+      - slug
+      - title
+      - updated_at
+      - versions_count
+    ArticleCreateUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[-a-zA-Z0-9_]+$
+        excerpt:
+          type: string
+        body:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        metadata: {}
+      required:
+      - title
+    ArticleVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        version_number:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        excerpt:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - created_by
+      - excerpt
+      - id
+      - metadata
+      - title
+      - version_number
     AuditEvent:
       type: object
       properties:
@@ -392,6 +1249,85 @@ components:
       - timestamp
       - user_agent
       - workspace_id
+    ContentTypeEnum:
+      enum:
+      - POST
+      - PAGE
+      - CASE_STUDY
+      - DOC
+      type: string
+      description: |-
+        * `POST` - Blog Post
+        * `PAGE` - Static Page
+        * `CASE_STUDY` - Case Study
+        * `DOC` - Documentation
+    Domain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        hostname:
+          type: string
+          maxLength: 253
+        is_primary:
+          type: boolean
+        verification_token:
+          type: string
+          format: uuid
+          readOnly: true
+        is_verified:
+          type: boolean
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ssl_status:
+          type: string
+          readOnly: true
+        dns_verification_record:
+          type: object
+          additionalProperties:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - dns_verification_record
+      - hostname
+      - id
+      - is_verified
+      - ssl_status
+      - updated_at
+      - verification_token
+      - verified_at
+    DomainCreateRequest:
+      type: object
+      properties:
+        hostname:
+          type: string
+          minLength: 1
+          maxLength: 253
+        is_primary:
+          type: boolean
+      required:
+      - hostname
+    DomainVerifyRequestRequest:
+      type: object
+      properties:
+        simulate_success:
+          type: boolean
+          default: true
     LoginRequest:
       type: object
       properties:
@@ -414,6 +1350,102 @@ components:
           minLength: 1
       required:
       - refresh
+    MediaAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        filename:
+          type: string
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        file_size:
+          type: integer
+          readOnly: true
+        storage_path:
+          type: string
+          readOnly: true
+        checksum_sha256:
+          type: string
+          readOnly: true
+        uploaded_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - checksum_sha256
+      - content_type
+      - created_at
+      - file_size
+      - filename
+      - id
+      - storage_path
+      - updated_at
+      - uploaded_by
+    MediaAssetCreateRequest:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        file_size:
+          type: integer
+          maximum: 10485760
+          minimum: 1
+        storage_path:
+          type: string
+          minLength: 1
+          maxLength: 500
+        checksum_sha256:
+          type: string
+          minLength: 1
+          default: ''
+          maxLength: 64
+      required:
+      - content_type
+      - file_size
+      - filename
+      - storage_path
+    PaginatedArticleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
     PaginatedAuditEventList:
       type: object
       required:
@@ -437,6 +1469,94 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditEvent'
+    PaginatedMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    PaginatedPublicArticleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicArticle'
+    PatchedArticleCreateUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ^[-a-zA-Z0-9_]+$
+        excerpt:
+          type: string
+        body:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        metadata: {}
+    PatchedSiteCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        default_locale:
+          type: string
+          minLength: 1
+          maxLength: 20
+        theme_config: {}
+        settings: {}
+        allowed_origins: {}
+        is_active:
+          type: boolean
     PatchedWorkspaceCreateRequest:
       type: object
       properties:
@@ -454,6 +1574,47 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    PublicArticle:
+      type: object
+      description: Clean, public-facing representation of published articles.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        excerpt:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        content_type:
+          allOf:
+          - $ref: '#/components/schemas/ContentTypeEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        metadata:
+          readOnly: true
+      required:
+      - body
+      - content_type
+      - excerpt
+      - id
+      - metadata
+      - published_at
+      - slug
+      - title
     RoleEnum:
       enum:
       - OWNER
@@ -466,6 +1627,82 @@ components:
         * `ADMIN` - Admin
         * `EDITOR` - Editor
         * `ANALYST` - Analyst
+    Site:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        default_locale:
+          type: string
+          maxLength: 20
+        theme_config: {}
+        settings: {}
+        allowed_origins: {}
+        is_active:
+          type: boolean
+        primary_domain:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - primary_domain
+      - slug
+      - updated_at
+    SiteCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        default_locale:
+          type: string
+          minLength: 1
+          maxLength: 20
+        theme_config: {}
+        settings: {}
+        allowed_origins: {}
+        is_active:
+          type: boolean
+      required:
+      - name
+    StatusEnum:
+      enum:
+      - DRAFT
+      - IN_REVIEW
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `IN_REVIEW` - In Review
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
     TokenRefreshRequest:
       type: object
       properties:
