@@ -318,6 +318,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         },
         # --- CORS (never used as authentication; SEC-2) ---
         "CORS_ALLOWED_ORIGINS": cors_origins,
+        "CORS_ALLOW_ALL_ORIGINS": not is_prod,
         "CORS_ALLOW_CREDENTIALS": False,
         "CORS_URLS_REGEX": r"^/api/.*$",
         # --- Security headers ---
