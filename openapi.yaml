@@ -90,7 +90,32 @@ paths:
         name: key_file
         schema:
           type: string
+          pattern: ^[^/]+\.txt$
         required: true
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: IndexNow key text
+        '404':
+          description: Key not found
+  /api/v1/public/sites/{site_slug}/analytics-config:
+    get:
+      operationId: public_sites_analytics_config_retrieve
+      description: Public endpoint providing safe, non-secret analytics IDs for browser
+        script loaders (ANA-1).
+      summary: Public analytics client configuration
+      parameters:
       - in: path
         name: site_slug
         schema:
@@ -104,9 +129,13 @@ paths:
       - {}
       responses:
         '200':
-          description: IndexNow key text
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAnalyticsConfig'
+          description: ''
         '404':
-          description: Key not found
+          description: Site not found
   /api/v1/public/sites/{site_slug}/articles/:
     get:
       operationId: public_sites_articles_list
@@ -203,6 +232,35 @@ paths:
           description: ''
         '404':
           description: Article not found
+  /api/v1/public/sites/{site_slug}/events:
+    post:
+      operationId: public_sites_events_create
+      description: Ingest privacy-preserving first-party analytics events (ANA-4,
+        ANA-5, ANA-6).
+      summary: Ingest first-party event
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          description: Invalid event
   /api/v1/public/sites/{site_slug}/robots.txt:
     get:
       operationId: public_sites_robots.txt_retrieve
@@ -707,6 +765,287 @@ paths:
       responses:
         '204':
           description: Site deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/config/:
+    get:
+      operationId: workspaces_sites_analytics_config_retrieve
+      description: Retrieve or update site-wide analytics and GTM configuration (ANA-1).
+      summary: Get site analytics configuration
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteAnalyticsConfig'
+          description: ''
+    patch:
+      operationId: workspaces_sites_analytics_config_partial_update
+      description: Retrieve or update site-wide analytics and GTM configuration (ANA-1).
+      summary: Update site analytics configuration
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSiteAnalyticsConfigRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteAnalyticsConfig'
+          description: ''
+        '400':
+          description: Invalid data
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/first-party/overview/:
+    get:
+      operationId: workspaces_sites_analytics_first_party_overview_retrieve
+      description: Retrieve aggregated first-party analytics metrics and time-series
+        (ANA-7).
+      summary: Get first-party analytics overview
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Aggregated metrics summary
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/first-party/visitors/{visitor_id}/:
+    delete:
+      operationId: workspaces_sites_analytics_first_party_visitors_destroy
+      description: Erase all event records for a pseudonymous visitor ID (GDPR Art.
+        17 right to erasure).
+      summary: Erase visitor analytics events
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: visitor_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Erasure result
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/ga4/:
+    get:
+      operationId: workspaces_sites_analytics_ga4_retrieve
+      description: Manage authorized GA4 OAuth connection and Reporting credentials
+        (ANA-2).
+      summary: Get GA4 connection status
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GA4Connection'
+          description: ''
+        '404':
+          description: Not configured
+    post:
+      operationId: workspaces_sites_analytics_ga4_create
+      description: Manage authorized GA4 OAuth connection and Reporting credentials
+        (ANA-2).
+      summary: Configure GA4 OAuth connection
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GA4ConnectionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GA4Connection'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GA4Connection'
+          description: ''
+    delete:
+      operationId: workspaces_sites_analytics_ga4_destroy
+      description: Manage authorized GA4 OAuth connection and Reporting credentials
+        (ANA-2).
+      summary: Disconnect GA4 connection
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: Disconnected
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/reports/ga4/:
+    get:
+      operationId: workspaces_sites_analytics_reports_ga4_retrieve
+      description: Execute or retrieve cached GA4 Data API reports (ANA-3).
+      summary: Fetch GA4 reporting data
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: report_type
+        schema:
+          enum:
+          - overview
+          - traffic_sources
+          - top_pages
+          type: string
+          default: overview
+          minLength: 1
+        description: |-
+          * `overview` - overview
+          * `traffic_sources` - traffic_sources
+          * `top_pages` - top_pages
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: use_cache
+        schema:
+          type: boolean
+          default: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: GA4 report results
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/:
     get:
       operationId: workspaces_sites_articles_list
@@ -1932,6 +2271,16 @@ paths:
           description: ''
 components:
   schemas:
+    AnalyticsEventTypeEnum:
+      enum:
+      - page_view
+      - cta_click
+      - form_submit
+      type: string
+      description: |-
+        * `page_view` - Page View
+        * `cta_click` - CTA Click
+        * `form_submit` - Form Submit
     Article:
       type: object
       properties:
@@ -2243,6 +2592,92 @@ components:
         simulate_success:
           type: boolean
           default: true
+    EventIngestRequest:
+      type: object
+      description: Serializer for public first-party event ingestion (ANA-4, ANA-6).
+      properties:
+        event_type:
+          $ref: '#/components/schemas/AnalyticsEventTypeEnum'
+        visitor_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        session_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        path:
+          type: string
+          minLength: 1
+          maxLength: 500
+        properties:
+          type: object
+          additionalProperties: {}
+          description: Allowlisted properties dictionary.
+        consent_granted:
+          type: boolean
+          default: false
+      required:
+      - event_type
+      - path
+      - session_id
+      - visitor_id
+    GA4Connection:
+      type: object
+      description: Serializer for GA4 authorized connection with write-only credentials
+        (ANA-2).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        property_id:
+          type: string
+          description: Numeric GA4 property ID (e.g. 123456789).
+          maxLength: 50
+        is_active:
+          type: boolean
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_error:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - last_error
+      - last_synced_at
+      - property_id
+      - updated_at
+    GA4ConnectionRequest:
+      type: object
+      description: Serializer for GA4 authorized connection with write-only credentials
+        (ANA-2).
+      properties:
+        property_id:
+          type: string
+          minLength: 1
+          description: Numeric GA4 property ID (e.g. 123456789).
+          maxLength: 50
+        is_active:
+          type: boolean
+        credentials:
+          writeOnly: true
+          description: OAuth tokens and credentials dictionary. Encrypted with AES-256-GCM
+            at rest.
+      required:
+      - property_id
     IndexNowKey:
       type: object
       description: Serializer for IndexNow key hosted verification file.
@@ -2634,6 +3069,29 @@ components:
           writeOnly: true
           description: Raw API key or access token. Will be encrypted at rest with
             AES-256-GCM.
+    PatchedSiteAnalyticsConfigRequest:
+      type: object
+      description: Serializer for managing site analytics settings (ANA-1).
+      properties:
+        measurement_id:
+          type: string
+          maxLength: 30
+        gtm_container_id:
+          type: string
+          maxLength: 30
+        is_first_party_enabled:
+          type: boolean
+          description: Toggle first-party privacy-preserving event ingestion (default
+            off).
+        retention_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Event data retention window in days before automated pruning
+            (7-730 days).
+        require_consent:
+          type: boolean
+          description: Whether event collection requires explicit visitor consent.
     PatchedSiteCreateRequest:
       type: object
       properties:
@@ -2700,6 +3158,31 @@ components:
         * `GOOGLE` - Google Search Console
         * `BING` - Bing Webmaster Tools
         * `INDEXNOW` - IndexNow
+    PublicAnalyticsConfig:
+      type: object
+      description: Public serializer delivering only non-secret IDs for browser frontend
+        loaders (ANA-1).
+      properties:
+        measurement_id:
+          type: string
+          readOnly: true
+        gtm_container_id:
+          type: string
+          readOnly: true
+        is_first_party_enabled:
+          type: boolean
+          readOnly: true
+          description: Toggle first-party privacy-preserving event ingestion (default
+            off).
+        require_consent:
+          type: boolean
+          readOnly: true
+          description: Whether event collection requires explicit visitor consent.
+      required:
+      - gtm_container_id
+      - is_first_party_enabled
+      - measurement_id
+      - require_consent
     PublicArticle:
       type: object
       description: Clean, public-facing representation of published articles.
@@ -2963,6 +3446,45 @@ components:
       - name
       - primary_domain
       - slug
+      - updated_at
+    SiteAnalyticsConfig:
+      type: object
+      description: Serializer for managing site analytics settings (ANA-1).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        measurement_id:
+          type: string
+          maxLength: 30
+        gtm_container_id:
+          type: string
+          maxLength: 30
+        is_first_party_enabled:
+          type: boolean
+          description: Toggle first-party privacy-preserving event ingestion (default
+            off).
+        retention_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Event data retention window in days before automated pruning
+            (7-730 days).
+        require_consent:
+          type: boolean
+          description: Whether event collection requires explicit visitor consent.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
       - updated_at
     SiteCreateRequest:
       type: object

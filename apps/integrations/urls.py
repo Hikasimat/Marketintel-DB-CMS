@@ -1,6 +1,6 @@
 """URL patterns for search engine integrations and IndexNow verification."""
 
-from django.urls import path
+from django.urls import path, re_path
 
 from apps.integrations.views import (
     IndexNowKeyView,
@@ -51,9 +51,9 @@ urlpatterns = [
         UrlInspectionView.as_view(),
         name="inspect_url",
     ),
-    # Public IndexNow key verification file
-    path(
-        "public/sites/<slug:site_slug>/<str:key_file>",
+    # Public IndexNow key verification file (must end in .txt)
+    re_path(
+        r"^public/sites/(?P<site_slug>[-a-zA-Z0-9_]+)/(?P<key_file>[^/]+\.txt)$",
         PublicIndexNowKeyFileView.as_view(),
         name="public_indexnow_key",
     ),

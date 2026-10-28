@@ -283,3 +283,52 @@ def test_cross_tenant_integrations_access_returns_404():
         f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/integrations/logs/"
     )
     assert resp_logs.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_cross_tenant_analytics_access_returns_404():
+    client = APIClient()
+
+    user_a = User.objects.create_user(email="user_a@tenant-a.com", password="SecurePassword123!")
+    workspace_a = Workspace.objects.create(name="Tenant A", slug="tenant-a")
+    WorkspaceMembership.objects.create(workspace=workspace_a, user=user_a, role=WorkspaceRole.OWNER)
+
+    user_b = User.objects.create_user(email="user_b@tenant-b.com", password="SecurePassword123!")
+    workspace_b = Workspace.objects.create(name="Tenant B", slug="tenant-b")
+    WorkspaceMembership.objects.create(workspace=workspace_b, user=user_b, role=WorkspaceRole.OWNER)
+
+    from apps.analytics.models import GA4Connection, SiteAnalyticsConfig
+    from apps.sites.models import Site
+
+    site_b = Site.objects.create(workspace=workspace_b, name="Site B", slug="site-b")
+    SiteAnalyticsConfig.objects.create(site=site_b, measurement_id="G-TENANTB")
+    GA4Connection.objects.create(site=site_b, property_id="999999999")
+
+    client.force_authenticate(user=user_a)
+
+    # 1. Analytics config
+    resp_config = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/config/"
+    )
+    assert resp_config.status_code == status.HTTP_404_NOT_FOUND
+
+    # 2. GA4 connection
+    resp_ga4 = client.get(f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/ga4/")
+    assert resp_ga4.status_code == status.HTTP_404_NOT_FOUND
+
+    # 3. GA4 reports
+    resp_reports = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/reports/ga4/"
+    )
+    assert resp_reports.status_code == status.HTTP_404_NOT_FOUND
+
+    # 4. First-party overview
+    resp_fp = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/first-party/overview/"
+    )
+    assert resp_fp.status_code == status.HTTP_404_NOT_FOUND
+
+    # 5. Visitor erasure
+    resp_erase = client.delete(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/first-party/visitors/visitor-123/"
+    )
+    assert resp_erase.status_code == status.HTTP_404_NOT_FOUND
