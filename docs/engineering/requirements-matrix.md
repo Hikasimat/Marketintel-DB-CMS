@@ -105,13 +105,13 @@ Endpoint paths are provisional. The OpenAPI schema produced in Stage 1+ is autho
 
 | ID | Requirement / acceptance criteria | Module | Endpoint(s) | Planned tests | Stage | Status |
 |----|-----------------------------------|--------|-------------|---------------|-------|--------|
-| CON-1 | Per-site config: categories (`necessary` always on; `analytics`, `marketing`, custom default off), policy version, retention, jurisdiction flags | `consent` | `/sites/{id}/consent/config/` | `tests/consent/test_config.py` | 7 | PLANNED |
-| CON-2 | Public config endpoint (non-secret) including Consent Mode mapping contract | `consent` | `GET /public/sites/{key}/consent-config` | `tests/consent/test_public_config.py` | 7 | PLANNED |
-| CON-3 | Record consent: visitor ID, categories (allowlist), policy version must match current, timestamp, expiry; accept/reject/customize | `consent` | `POST /public/sites/{key}/consent` | `tests/consent/test_records.py` | 7 | PLANNED |
-| CON-4 | Withdrawal/change creates a new record; history preserved; policy version bump invalidates prior consent for optional categories | `consent` | `POST …/consent/withdraw` | `tests/consent/test_lifecycle.py` | 7 | PLANNED |
-| CON-5 | Adding a new optional category never silently enables it | `consent` | — | `tests/consent/test_new_category.py` | 7 | PLANNED |
-| CON-6 | Export/delete by visitor ID (authorized and rate limited); retention cleanup job; minimal audit | `consent` | `/sites/{id}/consent/records/…` | `tests/consent/test_retention_export.py` | 7 | PLANNED |
-| CON-7 | Consent payloads are never logged | `common.logging` | — | `tests/consent/test_no_log_leak.py` | 7 | PLANNED |
+| CON-1 | Per-site config: categories (`necessary` always on; `analytics`, `marketing`, custom default off), policy version, retention, jurisdiction flags | `consent` | `/sites/{id}/consent/config/` | `tests/consent/test_config.py` | 7 | IMPLEMENTED |
+| CON-2 | Public config endpoint (non-secret) including Consent Mode mapping contract | `consent` | `GET /public/sites/{key}/consent-config` | `tests/consent/test_public_config.py` | 7 | IMPLEMENTED |
+| CON-3 | Record consent: visitor ID, categories (allowlist), policy version must match current, timestamp, expiry; accept/reject/customize | `consent` | `POST /public/sites/{key}/consent` | `tests/consent/test_records.py` | 7 | IMPLEMENTED |
+| CON-4 | Withdrawal/change creates a new record; history preserved; policy version bump invalidates prior consent for optional categories | `consent` | `POST …/consent/withdraw` | `tests/consent/test_lifecycle.py` | 7 | IMPLEMENTED |
+| CON-5 | Adding a new optional category never silently enables it | `consent` | — | `tests/consent/test_new_category.py` | 7 | IMPLEMENTED |
+| CON-6 | Export/delete by visitor ID (authorized and rate limited); retention cleanup job; minimal audit | `consent` | `/sites/{id}/consent/records/…` | `tests/consent/test_retention_export.py` | 7 | IMPLEMENTED |
+| CON-7 | Consent payloads are never logged | `common.logging` | — | `tests/consent/test_no_log_leak.py` | 7 | IMPLEMENTED |
 
 ## G. GitHub integration (Stage 8, feature-flagged)
 

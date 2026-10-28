@@ -37,6 +37,6 @@ One report per stage: `stage-XX.md`. A stage may only start after the previous r
 | 4 | SEO engine | PASS | [stage-04.md](stage-04.md) |
 | 5 | Search provider integrations | PASS | [stage-05.md](stage-05.md) |
 | 6 | Analytics | PASS | [stage-06.md](stage-06.md) |
-| 7 | Consent backend | — | — |
+| 7 | Consent backend | PASS | [stage-07.md](stage-07.md) |
 | 8 | GitHub onboarding (feature-flagged) | — | — |
 | 9 | QA and production readiness | — | — |

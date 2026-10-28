@@ -132,6 +132,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "apps.seo",
         "apps.integrations",
         "apps.analytics",
+        "apps.consent",
     ]
     if admin_enabled:
         installed_apps.insert(0, "django.contrib.admin")
@@ -268,6 +269,10 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
                 "SubmissionStatusEnum": "apps.integrations.models.SubmissionStatus",
                 "AnalyticsEventTypeEnum": "apps.analytics.models.EventType",
                 "AnalyticsDeviceCategoryEnum": "apps.analytics.models.DeviceCategory",
+                "ConsentRecordStatusEnum": "apps.consent.models.ConsentRecordStatus",
+                "ConsentTypeEnum": "apps.consent.models.ConsentType",
+                "JurisdictionModeEnum": "apps.consent.models.JurisdictionMode",
+                "GCMStateEnum": "apps.consent.models.GCMState",
             },
         },
         # --- CORS (never used as authentication; SEC-2) ---

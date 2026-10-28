@@ -27,6 +27,7 @@ urlpatterns = [
     path("api/v1/", include("apps.seo.urls")),
     path("api/v1/", include("apps.integrations.urls")),
     path("api/v1/", include("apps.analytics.urls")),
+    path("api/v1/", include("apps.consent.urls")),
 ]
 
 # Interactive API documentation (enabled only in non-production or when explicitly configured)

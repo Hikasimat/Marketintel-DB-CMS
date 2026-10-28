@@ -113,7 +113,7 @@ paths:
     get:
       operationId: public_sites_analytics_config_retrieve
       description: Public endpoint providing safe, non-secret analytics IDs for browser
-        script loaders (ANA-1).
+        loaders (ANA-1).
       summary: Public analytics client configuration
       parameters:
       - in: path
@@ -232,6 +232,146 @@ paths:
           description: ''
         '404':
           description: Article not found
+  /api/v1/public/sites/{site_slug}/consent:
+    post:
+      operationId: public_sites_consent_create
+      description: Public endpoint for visitors recording their consent decision (CON-3,
+        CON-5).
+      summary: Submit visitor consent decision
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConsentSubmitRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '201':
+          description: Consent recorded
+        '400':
+          description: Invalid category payload or format
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent-config:
+    get:
+      operationId: public_sites_consent_config_retrieve
+      description: Public browser contract returning active consent rules and category
+        definitions (CON-2).
+      summary: Get public consent banner configuration
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBannerConfig'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/banner-config:
+    get:
+      operationId: public_sites_consent_banner_config_retrieve
+      description: Public browser contract returning active consent rules and category
+        definitions (CON-2).
+      summary: Get public consent banner configuration
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBannerConfig'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/status:
+    get:
+      operationId: public_sites_consent_status_retrieve
+      description: Public endpoint for checking effective visitor consent status (CON-2,
+        CON-4).
+      summary: Query visitor consent status
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicConsentStatus'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/withdraw:
+    post:
+      operationId: public_sites_consent_withdraw_create
+      description: Public endpoint for visitors withdrawing consent (CON-4).
+      summary: Withdraw visitor consent
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConsentWithdrawRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: Consent withdrawn
+        '404':
+          description: Site not found
   /api/v1/public/sites/{site_slug}/events:
     post:
       operationId: public_sites_events_create
@@ -1419,6 +1559,378 @@ paths:
           description: ''
         '404':
           description: Version not found
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/config/:
+    get:
+      operationId: workspaces_sites_consent_config_retrieve
+      description: Manage per-site cookie consent policies and category rules (CON-1).
+      summary: Get site consent configuration
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteConsentConfig'
+          description: ''
+    patch:
+      operationId: workspaces_sites_consent_config_partial_update
+      description: Manage per-site cookie consent policies and category rules (CON-1).
+      summary: Update site consent configuration
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSiteConsentConfigRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteConsentConfig'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/records/:
+    get:
+      operationId: workspaces_sites_consent_records_list
+      description: Query paginated consent decision records for compliance audits
+        (CON-6).
+      summary: List consent audit records
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConsentRecord'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/records/visitor/{visitor_id}/:
+    delete:
+      operationId: workspaces_sites_consent_records_visitor_destroy
+      description: Purge all consent records for a visitor under GDPR Art. 17 right
+        to erasure (CON-6).
+      summary: Erase visitor consent history (GDPR Art. 17)
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: visitor_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Purge summary
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/records/visitor/{visitor_id}/export/:
+    get:
+      operationId: workspaces_sites_consent_records_visitor_export_retrieve
+      description: Export complete visitor consent history under GDPR Art. 15/20 portability
+        (CON-6).
+      summary: Export visitor consent history (GDPR Art. 15/20)
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: visitor_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Visitor consent history export
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/summary/:
+    get:
+      operationId: workspaces_sites_consent_summary_retrieve
+      description: Retrieve aggregated, anonymous consent statistics (opt-in rates,
+        distributions).
+      summary: Get consent summary metrics
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentSummary'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/versions/:
+    get:
+      operationId: workspaces_sites_consent_versions_list
+      description: List and create privacy policy versions for a site (CON-1, CON-4).
+      summary: List site privacy policy versions
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+    post:
+      operationId: workspaces_sites_consent_versions_create
+      description: List and create privacy policy versions for a site (CON-1, CON-4).
+      summary: Create privacy policy version
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/versions/{version_id}/:
+    get:
+      operationId: workspaces_sites_consent_versions_retrieve
+      description: Retrieve and update an existing privacy policy version.
+      summary: Get privacy policy version details
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+    patch:
+      operationId: workspaces_sites_consent_versions_partial_update
+      description: Retrieve and update an existing privacy policy version.
+      summary: Update privacy policy version
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPrivacyPolicyVersionRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/consent/versions/{version_id}/activate/:
+    post:
+      operationId: workspaces_sites_consent_versions_activate_create
+      description: Activate a privacy policy version as the current governing policy
+        (CON-4).
+      summary: Activate privacy policy version
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/domains/:
     get:
       operationId: workspaces_sites_domains_list
@@ -2513,6 +3025,112 @@ components:
         * `CONNECTED` - Connected
         * `ERROR` - Error
         * `DISCONNECTED` - Disconnected
+    ConsentRecord:
+      type: object
+      description: Serializer for consent audit trail records (CON-3, CON-6).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site_id:
+          type: string
+          format: uuid
+          readOnly: true
+        visitor_id:
+          type: string
+          readOnly: true
+          description: Opaque pseudonymous client identifier. Zero raw IP stored (CON-3,
+            ANA-5).
+        policy_version_string:
+          type: string
+          readOnly: true
+        categories:
+          readOnly: true
+          description: 'Category states dictionary {''necessary'': True, ''analytics'':
+            False, ...}.'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ConsentRecordStatusEnum'
+          readOnly: true
+        consent_type:
+          allOf:
+          - $ref: '#/components/schemas/ConsentTypeEnum'
+          readOnly: true
+        recorded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        withdrawn_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - categories
+      - consent_type
+      - expires_at
+      - id
+      - policy_version_string
+      - recorded_at
+      - site_id
+      - status
+      - visitor_id
+      - withdrawn_at
+    ConsentRecordStatusEnum:
+      enum:
+      - GRANTED
+      - PARTIALLY_GRANTED
+      - DENIED
+      - WITHDRAWN
+      type: string
+      description: |-
+        * `GRANTED` - Granted
+        * `PARTIALLY_GRANTED` - Partially Granted
+        * `DENIED` - Denied
+        * `WITHDRAWN` - Withdrawn
+    ConsentSummary:
+      type: object
+      description: Aggregated consent summary response.
+      properties:
+        total_decisions:
+          type: integer
+        granted_count:
+          type: integer
+        partially_granted_count:
+          type: integer
+        denied_count:
+          type: integer
+        withdrawn_count:
+          type: integer
+        category_acceptance_rates:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+      required:
+      - category_acceptance_rates
+      - denied_count
+      - granted_count
+      - partially_granted_count
+      - total_decisions
+      - withdrawn_count
+    ConsentTypeEnum:
+      enum:
+      - EXPLICIT_OPT_IN
+      - OPT_OUT
+      - IMPLICIT_NECESSARY_ONLY
+      - WITHDRAWAL
+      type: string
+      description: |-
+        * `EXPLICIT_OPT_IN` - Explicit Opt-in
+        * `OPT_OUT` - Opt-out
+        * `IMPLICIT_NECESSARY_ONLY` - Implicit Necessary Only
+        * `WITHDRAWAL` - Withdrawal
     ContentTypeEnum:
       enum:
       - POST
@@ -2678,6 +3296,14 @@ components:
             at rest.
       required:
       - property_id
+    GCMStateEnum:
+      enum:
+      - granted
+      - denied
+      type: string
+      description: |-
+        * `granted` - Granted
+        * `denied` - Denied
     IndexNowKey:
       type: object
       description: Serializer for IndexNow key hosted verification file.
@@ -2760,6 +3386,18 @@ components:
       - status
       - updated_at
       - urls
+    JurisdictionModeEnum:
+      enum:
+      - GDPR
+      - CCPA_CPRA
+      - GLOBAL_OPT_IN
+      - GLOBAL_OPT_OUT
+      type: string
+      description: |-
+        * `GDPR` - GDPR (Strict Opt-in)
+        * `CCPA_CPRA` - CCPA/CPRA (Opt-out)
+        * `GLOBAL_OPT_IN` - Global Opt-in
+        * `GLOBAL_OPT_OUT` - Global Opt-out
     LoginRequest:
       type: object
       properties:
@@ -3039,6 +3677,29 @@ components:
           minLength: 1
           maxLength: 50
         jsonld_schema: {}
+    PatchedPrivacyPolicyVersionRequest:
+      type: object
+      description: Serializer for privacy policy versions.
+      properties:
+        version:
+          type: string
+          minLength: 1
+          description: Version identifier (e.g. '1.0', '2026.1').
+          maxLength: 50
+        title:
+          type: string
+          minLength: 1
+          description: Policy version title.
+          maxLength: 255
+        summary:
+          type: string
+          description: Summary of major changes.
+        body:
+          type: string
+          description: Full markdown or text policy content.
+        effective_date:
+          type: string
+          format: date-time
     PatchedRedirectRuleRequest:
       type: object
       properties:
@@ -3092,6 +3753,51 @@ components:
         require_consent:
           type: boolean
           description: Whether event collection requires explicit visitor consent.
+    PatchedSiteConsentConfigRequest:
+      type: object
+      description: Serializer for per-site consent configuration (CON-1).
+      properties:
+        is_enabled:
+          type: boolean
+          description: Master switch for consent management on this site.
+        jurisdiction_mode:
+          allOf:
+          - $ref: '#/components/schemas/JurisdictionModeEnum'
+          description: |-
+            Jurisdiction compliance mode determining default gating rules.
+
+            * `GDPR` - GDPR (Strict Opt-in)
+            * `CCPA_CPRA` - CCPA/CPRA (Opt-out)
+            * `GLOBAL_OPT_IN` - Global Opt-in
+            * `GLOBAL_OPT_OUT` - Global Opt-out
+        retention_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Consent record retention duration in days (30 to 1095 days).
+        cookie_domain:
+          type: string
+          description: Optional root cookie domain for subdomains.
+          maxLength: 255
+        active_policy_version:
+          type: string
+          format: uuid
+          nullable: true
+          description: Currently active privacy policy version for visitor consent.
+        categories:
+          description: Extended custom categories dictionary. Adding new optional
+            categories never enables them silently (CON-5).
+        gcm_enabled:
+          type: boolean
+          description: Support Google Consent Mode v2 signal dispatch contract.
+        gcm_default_analytics_storage:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_storage:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_user_data:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_personalization:
+          $ref: '#/components/schemas/GCMStateEnum'
     PatchedSiteCreateRequest:
       type: object
       properties:
@@ -3148,6 +3854,113 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    PrivacyPolicyVersion:
+      type: object
+      description: Serializer for privacy policy versions.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site_id:
+          type: string
+          format: uuid
+          readOnly: true
+        version:
+          type: string
+          description: Version identifier (e.g. '1.0', '2026.1').
+          maxLength: 50
+        title:
+          type: string
+          description: Policy version title.
+          maxLength: 255
+        summary:
+          type: string
+          description: Summary of major changes.
+        body:
+          type: string
+          description: Full markdown or text policy content.
+        is_active:
+          type: boolean
+          readOnly: true
+          description: Whether this version is the currently enforced policy version
+            for the site.
+        effective_date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_active
+      - site_id
+      - title
+      - updated_at
+      - version
+    PrivacyPolicyVersionCreateRequest:
+      type: object
+      description: Serializer for creating a new privacy policy version.
+      properties:
+        version:
+          type: string
+          minLength: 1
+          description: Version identifier (e.g. '1.0', '2026.1').
+          maxLength: 50
+        title:
+          type: string
+          minLength: 1
+          description: Policy version title.
+          maxLength: 255
+        summary:
+          type: string
+          description: Summary of major changes.
+        body:
+          type: string
+          description: Full markdown or text policy content.
+        effective_date:
+          type: string
+          format: date-time
+        activate_now:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Whether to immediately activate this policy version upon creation.
+      required:
+      - title
+      - version
+    PrivacyPolicyVersionRequest:
+      type: object
+      description: Serializer for privacy policy versions.
+      properties:
+        version:
+          type: string
+          minLength: 1
+          description: Version identifier (e.g. '1.0', '2026.1').
+          maxLength: 50
+        title:
+          type: string
+          minLength: 1
+          description: Policy version title.
+          maxLength: 255
+        summary:
+          type: string
+          description: Summary of major changes.
+        body:
+          type: string
+          description: Full markdown or text policy content.
+        effective_date:
+          type: string
+          format: date-time
+      required:
+      - title
+      - version
     ProviderEnum:
       enum:
       - GOOGLE
@@ -3224,6 +4037,114 @@ components:
       - published_at
       - slug
       - title
+    PublicBannerConfig:
+      type: object
+      description: Contract serializer for browser/SDK consent banner loading (CON-2).
+      properties:
+        is_enabled:
+          type: boolean
+        jurisdiction_mode:
+          $ref: '#/components/schemas/JurisdictionModeEnum'
+        cookie_domain:
+          type: string
+        active_policy:
+          type: object
+          additionalProperties: {}
+          nullable: true
+        categories:
+          type: object
+          additionalProperties: {}
+        default_states:
+          type: object
+          additionalProperties: {}
+        gcm_enabled:
+          type: boolean
+        gcm_defaults:
+          type: object
+          additionalProperties: {}
+      required:
+      - active_policy
+      - categories
+      - cookie_domain
+      - default_states
+      - gcm_defaults
+      - gcm_enabled
+      - is_enabled
+      - jurisdiction_mode
+    PublicConsentStatus:
+      type: object
+      description: Response serializer for public visitor consent status inquiry.
+      properties:
+        has_consent_record:
+          type: boolean
+        record_id:
+          type: string
+        status:
+          type: string
+        categories:
+          type: object
+          additionalProperties: {}
+        recorded_at:
+          type: string
+        expires_at:
+          type: string
+        policy_version:
+          type: string
+          nullable: true
+        requires_reconsent:
+          type: boolean
+        is_withdrawn:
+          type: boolean
+      required:
+      - categories
+      - has_consent_record
+      - is_withdrawn
+      - policy_version
+      - requires_reconsent
+      - status
+    PublicConsentSubmitConsentTypeEnum:
+      enum:
+      - EXPLICIT_OPT_IN
+      - OPT_OUT
+      - IMPLICIT_NECESSARY_ONLY
+      type: string
+      description: |-
+        * `EXPLICIT_OPT_IN` - EXPLICIT_OPT_IN
+        * `OPT_OUT` - OPT_OUT
+        * `IMPLICIT_NECESSARY_ONLY` - IMPLICIT_NECESSARY_ONLY
+    PublicConsentSubmitRequest:
+      type: object
+      description: Payload serializer for visitor submitting consent choices (CON-3).
+      properties:
+        visitor_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        policy_version:
+          type: string
+          default: ''
+          maxLength: 50
+        categories:
+          type: object
+          additionalProperties:
+            type: boolean
+        consent_type:
+          allOf:
+          - $ref: '#/components/schemas/PublicConsentSubmitConsentTypeEnum'
+          default: EXPLICIT_OPT_IN
+      required:
+      - categories
+      - visitor_id
+    PublicConsentWithdrawRequest:
+      type: object
+      description: Payload serializer for visitor withdrawing all consent (CON-4).
+      properties:
+        visitor_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - visitor_id
     PublicSEOMetadata:
       type: object
       properties:
@@ -3485,6 +4406,82 @@ components:
       required:
       - created_at
       - id
+      - updated_at
+    SiteConsentConfig:
+      type: object
+      description: Serializer for per-site consent configuration (CON-1).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site_id:
+          type: string
+          format: uuid
+          readOnly: true
+        is_enabled:
+          type: boolean
+          description: Master switch for consent management on this site.
+        jurisdiction_mode:
+          allOf:
+          - $ref: '#/components/schemas/JurisdictionModeEnum'
+          description: |-
+            Jurisdiction compliance mode determining default gating rules.
+
+            * `GDPR` - GDPR (Strict Opt-in)
+            * `CCPA_CPRA` - CCPA/CPRA (Opt-out)
+            * `GLOBAL_OPT_IN` - Global Opt-in
+            * `GLOBAL_OPT_OUT` - Global Opt-out
+        retention_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Consent record retention duration in days (30 to 1095 days).
+        cookie_domain:
+          type: string
+          description: Optional root cookie domain for subdomains.
+          maxLength: 255
+        active_policy_version:
+          type: string
+          format: uuid
+          nullable: true
+          description: Currently active privacy policy version for visitor consent.
+        active_policy_version_detail:
+          allOf:
+          - $ref: '#/components/schemas/PrivacyPolicyVersion'
+          readOnly: true
+        categories:
+          description: Extended custom categories dictionary. Adding new optional
+            categories never enables them silently (CON-5).
+        all_categories:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        gcm_enabled:
+          type: boolean
+          description: Support Google Consent Mode v2 signal dispatch contract.
+        gcm_default_analytics_storage:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_storage:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_user_data:
+          $ref: '#/components/schemas/GCMStateEnum'
+        gcm_default_ad_personalization:
+          $ref: '#/components/schemas/GCMStateEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active_policy_version_detail
+      - all_categories
+      - created_at
+      - id
+      - site_id
       - updated_at
     SiteCreateRequest:
       type: object

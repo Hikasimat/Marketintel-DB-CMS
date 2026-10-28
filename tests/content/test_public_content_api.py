@@ -158,6 +158,9 @@ def test_public_articles_inactive_or_nonexistent_site_returns_404(
 @pytest.mark.django_db
 def test_public_origin_allowlist_enforcement(public_setup: dict[str, object]) -> None:
     """Test CT-6 Origin header enforcement."""
+    from django.core.cache import cache
+
+    cache.clear()
     client = APIClient()
     active_site = public_setup["active_site"]
     assert isinstance(active_site, Site)

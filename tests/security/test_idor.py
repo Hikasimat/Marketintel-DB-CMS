@@ -332,3 +332,58 @@ def test_cross_tenant_analytics_access_returns_404():
         f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/analytics/first-party/visitors/visitor-123/"
     )
     assert resp_erase.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_cross_tenant_consent_access_returns_404():
+    client = APIClient()
+
+    user_a = User.objects.create_user(email="user_a@tenant-a.com", password="SecurePassword123!")
+    workspace_a = Workspace.objects.create(name="Tenant A", slug="tenant-a")
+    WorkspaceMembership.objects.create(workspace=workspace_a, user=user_a, role=WorkspaceRole.OWNER)
+
+    user_b = User.objects.create_user(email="user_b@tenant-b.com", password="SecurePassword123!")
+    workspace_b = Workspace.objects.create(name="Tenant B", slug="tenant-b")
+    WorkspaceMembership.objects.create(workspace=workspace_b, user=user_b, role=WorkspaceRole.OWNER)
+
+    from apps.consent.models import PrivacyPolicyVersion, SiteConsentConfig
+    from apps.sites.models import Site
+
+    site_b = Site.objects.create(workspace=workspace_b, name="Site B", slug="site-b")
+    config_b = SiteConsentConfig.objects.create(site=site_b)
+    policy_b = PrivacyPolicyVersion.objects.create(
+        site=site_b, version="1.0", title="v1", is_active=True
+    )
+    config_b.active_policy_version = policy_b
+    config_b.save()
+
+    client.force_authenticate(user=user_a)
+
+    # 1. Site consent config
+    resp_config = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/config/"
+    )
+    assert resp_config.status_code == status.HTTP_404_NOT_FOUND
+
+    # 2. Policy versions
+    resp_versions = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/versions/"
+    )
+    assert resp_versions.status_code == status.HTTP_404_NOT_FOUND
+
+    # 3. Consent records
+    resp_records = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/records/"
+    )
+    assert resp_records.status_code == status.HTTP_404_NOT_FOUND
+
+    # 4. Consent export
+    resp_export = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/records/visitor/visitor-123/export/"
+    )
+    assert resp_export.status_code == status.HTTP_404_NOT_FOUND
+
+    # 5. Consent summary
+    resp_summary = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/summary/"
+    )
+    assert resp_summary.status_code == status.HTTP_404_NOT_FOUND
