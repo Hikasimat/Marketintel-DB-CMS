@@ -39,4 +39,4 @@ One report per stage: `stage-XX.md`. A stage may only start after the previous r
 | 6 | Analytics | PASS | [stage-06.md](stage-06.md) |
 | 7 | Consent backend | PASS | [stage-07.md](stage-07.md) |
 | 8 | GitHub onboarding (feature-flagged) | PASS | [stage-08.md](stage-08.md) |
-| 9 | QA and production readiness | — | — |
+| 9 | QA and production readiness | PASS | [stage-09.md](stage-09.md) |

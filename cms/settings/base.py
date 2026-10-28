@@ -298,7 +298,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "SECURE_REDIRECT_EXEMPT": [r"^health/"],
         "SECURE_HSTS_SECONDS": hsts_seconds,
         "SECURE_HSTS_INCLUDE_SUBDOMAINS": hsts_seconds > 0,
-        "SECURE_HSTS_PRELOAD": False,
+        "SECURE_HSTS_PRELOAD": env.bool("SECURE_HSTS_PRELOAD", default=is_prod),
         "SESSION_COOKIE_SECURE": is_prod,
         "SESSION_COOKIE_HTTPONLY": True,
         "CSRF_COOKIE_SECURE": is_prod,

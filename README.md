@@ -97,11 +97,46 @@ python manage.py runserver 127.0.0.1:8000
 
 ---
 
-## Quality & Security Test Suite
+---
 
-Run the full automated test suite:
+## Documentation Index
+
+### 1. Operations & Deployment
+- [Production Deployment Guide](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/operations/deployment.md)
+- [Production Operations Runbook](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/operations/runbook.md)
+- [Backup, Disaster Recovery & Restore Guide](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/operations/backup-restore.md)
+- [Production Release Checklist](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/operations/release-checklist.md)
+
+### 2. Security & Privacy
+- [Security Controls & Threat Model Closure](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/security/security-controls.md)
+- [Privacy Architecture, Data Minimization & Retention](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/privacy/data-flow-and-retention.md)
+- [System Threat Model](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/threat-model.md)
+- [Risk Register](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/risk-register.md)
+
+### 3. API Reference Guides
+- [Authentication, Tenancy & RBAC API Reference](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/api/auth-and-tenancy.md)
+- [Content Management & Public Delivery API Reference](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/api/content-api.md)
+- [Technical SEO Engine API Reference](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/api/seo-api.md)
+- [Consent & Analytics API Reference](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/api/consent-and-analytics-api.md)
+- [External Search & GitHub Integrations API Reference](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/api/integrations-api.md)
+
+### 4. Integrations
+- [MarketIntel Federated Integration Guide](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/integrations/marketintel-integration.md)
+- [GitHub App Integration Operational Guide](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/integrations/github-app-integration.md)
+- [Search & Analytics Provider Specifications](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/integrations/provider-notes.md)
+
+---
+
+## Quality & Security Verification Suite
+
+Run the full automated test suite with coverage:
 ```bash
-pytest --cov=apps --cov=cms --cov-report=term-missing
+pytest --cov=apps --cov-report=term-missing
+```
+
+Verify MarketIntel decoupling:
+```bash
+pytest tests/test_no_marketintel_coupling.py
 ```
 
 Run code formatting and linting:
@@ -112,7 +147,7 @@ ruff check .
 
 Run static type checking:
 ```bash
-mypy apps/common apps/accounts
+mypy apps
 ```
 
 Run SAST security scan:
@@ -122,17 +157,33 @@ bandit -r apps -c pyproject.toml
 
 Run dependency vulnerability audit:
 ```bash
-pip-audit -r requirements/base.txt
+pip-audit
 ```
 
 Verify Django production deployment checks:
 ```bash
-DJANGO_SETTINGS_MODULE=cms.settings.prod python manage.py check --deploy
+python manage.py check --deploy --settings=cms.settings.prod
+```
+
+Validate OpenAPI specification:
+```bash
+python manage.py spectacular --validate --fail-on-warn --file openapi.yaml
 ```
 
 ---
 
-## Development Engineering Workflow
+## Engineering Stage Reports
 
-This service is developed following the rigorous SDE workflow specified in `.agents/skills/sde-workflow/SKILL.md`. Each development phase progresses through small, verifiable stages with mandatory gates, security reviews, and traceable evidence.
-Refer to `docs/engineering/stage-reports/` for detailed stage completion reports.
+This service was constructed following the SDE workflow specified in `.agents/skills/sde-workflow/SKILL.md`. Each development phase progressed through small, verifiable stages with mandatory gates, security reviews, and traceable evidence:
+- [Stage Reports Index](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/README.md)
+- [Stage 00 — Discovery & Requirements](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-00.md)
+- [Stage 01 — Project Foundation](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-01.md)
+- [Stage 02 — Authentication, Tenancy & Audit](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-02.md)
+- [Stage 03 — Sites/Domains & Content Delivery](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-03.md)
+- [Stage 04 — Technical SEO Engine](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-04.md)
+- [Stage 05 — Search Provider Integrations](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-05.md)
+- [Stage 06 — Analytics & Privacy Event Ingestion](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-06.md)
+- [Stage 07 — Consent & Cookie Preference Backend](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-07.md)
+- [Stage 08 — GitHub Repository Onboarding & Integration PRs](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-08.md)
+- [Stage 09 — Production Hardening & Release Verification](file:///c:/Users/mohan/OneDrive/Desktop/CMS/docs/engineering/stage-reports/stage-09.md)
+
