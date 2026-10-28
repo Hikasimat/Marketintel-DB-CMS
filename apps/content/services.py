@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from django.db import models, transaction
@@ -10,6 +11,8 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.audit.services import record_audit_event
 from apps.content.models import Article, ArticleStatus, ArticleVersion
+
+logger = logging.getLogger(__name__)
 
 
 def create_article_version(article: Article, user: User | None = None) -> ArticleVersion:
@@ -50,6 +53,16 @@ def publish_article(article: Article, user: User, request: Any = None) -> Articl
             resource_id=str(article.id),
             payload={"title": article.title, "slug": article.slug, "site": article.site.name},
         )
+
+        def _notify() -> None:
+            try:
+                from apps.integrations.tasks import notify_search_engines_for_article
+
+                notify_search_engines_for_article(article.id)
+            except Exception as exc:
+                logger.warning("Failed to trigger search engine notification: %s", exc)
+
+        transaction.on_commit(_notify)
     return article
 
 

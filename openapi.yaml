@@ -79,6 +79,34 @@ paths:
           description: Token successfully rotated
         '401':
           description: Token expired, invalid, or reused
+  /api/v1/public/sites/{site_slug}/{key_file}:
+    get:
+      operationId: public_sites_retrieve
+      description: Public endpoint to serve the IndexNow verification key file (e.g.
+        /<key>.txt).
+      summary: IndexNow key file delivery
+      parameters:
+      - in: path
+        name: key_file
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: IndexNow key text
+        '404':
+          description: Key not found
   /api/v1/public/sites/{site_slug}/articles/:
     get:
       operationId: public_sites_articles_list
@@ -147,8 +175,10 @@ paths:
   /api/v1/public/sites/{site_slug}/articles/{article_slug}/seo/:
     get:
       operationId: public_sites_articles_seo_retrieve
-      description: Serve structured SEO metadata, canonicals, and JSON-LD for frontend
-        rendering (SEO-1, SEO-9).
+      description: |-
+        Serve structured SEO metadata, canonicals, and JSON-LD for frontend rendering.
+
+        Requirements satisfied: SEO-1, SEO-9.
       parameters:
       - in: path
         name: article_slug
@@ -1226,6 +1256,406 @@ paths:
           description: ''
         '400':
           description: Verification failed
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/connections/:
+    get:
+      operationId: workspaces_sites_integrations_connections_list
+      description: List or configure search engine API connections for a site (SEC-3).
+      summary: List search engine connections for site
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchEngineConnection'
+          description: ''
+    post:
+      operationId: workspaces_sites_integrations_connections_create
+      description: List or configure search engine API connections for a site (SEC-3).
+      summary: Configure or update search engine connection
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchEngineConnectionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchEngineConnection'
+          description: ''
+        '400':
+          description: Invalid data
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/connections/{connection_id}/:
+    get:
+      operationId: workspaces_sites_integrations_connections_retrieve
+      description: Retrieve, update, or remove a specific search engine connection.
+      summary: Get search connection details
+      parameters:
+      - in: path
+        name: connection_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchEngineConnection'
+          description: ''
+        '404':
+          description: Not found
+    patch:
+      operationId: workspaces_sites_integrations_connections_partial_update
+      description: Retrieve, update, or remove a specific search engine connection.
+      summary: Update search engine connection
+      parameters:
+      - in: path
+        name: connection_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSearchEngineConnectionRequest'
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchEngineConnection'
+          description: ''
+        '400':
+          description: Invalid data
+    delete:
+      operationId: workspaces_sites_integrations_connections_destroy
+      description: Retrieve, update, or remove a specific search engine connection.
+      summary: Delete search engine connection
+      parameters:
+      - in: path
+        name: connection_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/indexnow/:
+    get:
+      operationId: workspaces_sites_integrations_indexnow_retrieve
+      description: Retrieve or generate IndexNow verification key for site.
+      summary: Get or generate IndexNow key for site
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexNowKey'
+          description: ''
+    post:
+      operationId: workspaces_sites_integrations_indexnow_create
+      description: Retrieve or generate IndexNow verification key for site.
+      summary: Rotate IndexNow key for site
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexNowKey'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/indexnow/rotate/:
+    get:
+      operationId: workspaces_sites_integrations_indexnow_rotate_retrieve
+      description: Retrieve or generate IndexNow verification key for site.
+      summary: Get or generate IndexNow key for site
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexNowKey'
+          description: ''
+    post:
+      operationId: workspaces_sites_integrations_indexnow_rotate_create
+      description: Retrieve or generate IndexNow verification key for site.
+      summary: Rotate IndexNow key for site
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexNowKey'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/inspect-url/:
+    post:
+      operationId: workspaces_sites_integrations_inspect_url_create
+      description: Inspect URL status using Google Search Console URL Inspection API.
+      summary: Inspect URL indexing status via Google Search Console
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlInspectionRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Inspection details
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/logs/:
+    get:
+      operationId: workspaces_sites_integrations_logs_list
+      description: List search engine indexing submission logs for site.
+      summary: List indexing submission logs
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IndexSubmissionLog'
+          description: ''
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/submit/:
+    post:
+      operationId: workspaces_sites_integrations_submit_create
+      description: Manually submit article or page URLs to search engines (OPS-1).
+      summary: Submit URLs to search provider
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualSubmissionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexSubmissionLog'
+          description: ''
+        '400':
+          description: Invalid request
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/redirects/:
     get:
       operationId: workspaces_sites_redirects_list
@@ -1523,7 +1953,7 @@ components:
         content_type:
           $ref: '#/components/schemas/ContentTypeEnum'
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ArticleStatusEnum'
         published_at:
           type: string
           format: date-time
@@ -1571,7 +2001,7 @@ components:
         content_type:
           $ref: '#/components/schemas/ContentTypeEnum'
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ArticleStatusEnum'
         metadata: {}
       required:
       - title
@@ -1620,6 +2050,18 @@ components:
       - created_at
       - id
       - updated_at
+    ArticleStatusEnum:
+      enum:
+      - DRAFT
+      - IN_REVIEW
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `IN_REVIEW` - In Review
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
     ArticleVersion:
       type: object
       properties:
@@ -1712,6 +2154,16 @@ components:
       - timestamp
       - user_agent
       - workspace_id
+    ConnectionStatusEnum:
+      enum:
+      - CONNECTED
+      - ERROR
+      - DISCONNECTED
+      type: string
+      description: |-
+        * `CONNECTED` - Connected
+        * `ERROR` - Error
+        * `DISCONNECTED` - Disconnected
     ContentTypeEnum:
       enum:
       - POST
@@ -1791,6 +2243,88 @@ components:
         simulate_success:
           type: boolean
           default: true
+    IndexNowKey:
+      type: object
+      description: Serializer for IndexNow key hosted verification file.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+        key_location:
+          type: string
+          readOnly: true
+        is_verified:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_verified
+      - key
+      - key_location
+      - updated_at
+    IndexSubmissionLog:
+      type: object
+      description: Serializer for indexing submission logs and audit trail.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        provider:
+          allOf:
+          - $ref: '#/components/schemas/ProviderEnum'
+          readOnly: true
+        urls:
+          readOnly: true
+        idempotency_key:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionStatusEnum'
+          readOnly: true
+        response_code:
+          type: integer
+          readOnly: true
+          nullable: true
+        response_body:
+          type: string
+          readOnly: true
+        retry_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - idempotency_key
+      - provider
+      - response_body
+      - response_code
+      - retry_count
+      - status
+      - updated_at
+      - urls
     LoginRequest:
       type: object
       properties:
@@ -1813,6 +2347,24 @@ components:
           minLength: 1
       required:
       - refresh
+    ManualSubmissionRequest:
+      type: object
+      description: Request serializer for manual URL batch submission to search engines.
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        urls:
+          type: array
+          items:
+            type: string
+            format: uri
+            minLength: 1
+          description: List of article or page URLs to submit.
+          maxItems: 10000
+          minItems: 1
+      required:
+      - provider
+      - urls
     MediaAsset:
       type: object
       properties:
@@ -2020,7 +2572,7 @@ components:
         content_type:
           $ref: '#/components/schemas/ContentTypeEnum'
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ArticleStatusEnum'
         metadata: {}
     PatchedArticleSEORequest:
       type: object
@@ -2069,6 +2621,19 @@ components:
           default: 301
         is_active:
           type: boolean
+    PatchedSearchEngineConnectionRequest:
+      type: object
+      description: Serializer for search engine API connections with write-only credentials
+        (SEC-3).
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        settings: {}
+        credentials:
+          type: string
+          writeOnly: true
+          description: Raw API key or access token. Will be encrypted at rest with
+            AES-256-GCM.
     PatchedSiteCreateRequest:
       type: object
       properties:
@@ -2125,6 +2690,16 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
+    ProviderEnum:
+      enum:
+      - GOOGLE
+      - BING
+      - INDEXNOW
+      type: string
+      description: |-
+        * `GOOGLE` - Google Search Console
+        * `BING` - Bing Webmaster Tools
+        * `INDEXNOW` - IndexNow
     PublicArticle:
       type: object
       description: Clean, public-facing representation of published articles.
@@ -2293,6 +2868,61 @@ components:
       - remediation
       - severity
       - slug
+    SearchEngineConnection:
+      type: object
+      description: Serializer for search engine API connections with write-only credentials
+        (SEC-3).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ConnectionStatusEnum'
+          readOnly: true
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        error_message:
+          type: string
+          readOnly: true
+        settings: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - error_message
+      - id
+      - last_synced_at
+      - provider
+      - status
+      - updated_at
+    SearchEngineConnectionRequest:
+      type: object
+      description: Serializer for search engine API connections with write-only credentials
+        (SEC-3).
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        settings: {}
+        credentials:
+          type: string
+          writeOnly: true
+          description: Raw API key or access token. Will be encrypted at rest with
+            AES-256-GCM.
+      required:
+      - provider
     Site:
       type: object
       properties:
@@ -2403,18 +3033,16 @@ components:
         * `302` - 302 Found
         * `307` - 307 Temporary Redirect
         * `308` - 308 Permanent Redirect
-    StatusEnum:
+    SubmissionStatusEnum:
       enum:
-      - DRAFT
-      - IN_REVIEW
-      - PUBLISHED
-      - ARCHIVED
+      - PENDING
+      - SUBMITTED
+      - FAILED
       type: string
       description: |-
-        * `DRAFT` - Draft
-        * `IN_REVIEW` - In Review
-        * `PUBLISHED` - Published
-        * `ARCHIVED` - Archived
+        * `PENDING` - Pending
+        * `SUBMITTED` - Submitted
+        * `FAILED` - Failed
     TokenRefreshRequest:
       type: object
       properties:
@@ -2423,6 +3051,17 @@ components:
           minLength: 1
       required:
       - refresh
+    UrlInspectionRequestRequest:
+      type: object
+      description: Request serializer for Google Search Console URL Inspection API.
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+          description: Fully qualified article or page URL to inspect.
+      required:
+      - url
     User:
       type: object
       properties:

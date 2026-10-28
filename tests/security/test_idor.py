@@ -239,3 +239,47 @@ def test_cross_tenant_seo_access_returns_404():
     # 4. SEO audit
     resp_audit = client.get(f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/seo-audit/")
     assert resp_audit.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_cross_tenant_integrations_access_returns_404():
+    client = APIClient()
+
+    user_a = User.objects.create_user(email="user_a@tenant-a.com", password="SecurePassword123!")
+    workspace_a = Workspace.objects.create(name="Tenant A", slug="tenant-a")
+    WorkspaceMembership.objects.create(workspace=workspace_a, user=user_a, role=WorkspaceRole.OWNER)
+
+    user_b = User.objects.create_user(email="user_b@tenant-b.com", password="SecurePassword123!")
+    workspace_b = Workspace.objects.create(name="Tenant B", slug="tenant-b")
+    WorkspaceMembership.objects.create(workspace=workspace_b, user=user_b, role=WorkspaceRole.OWNER)
+
+    from apps.integrations.models import SearchEngineConnection, SearchProvider
+    from apps.sites.models import Site
+
+    site_b = Site.objects.create(workspace=workspace_b, name="Site B", slug="site-b")
+    conn_b = SearchEngineConnection.objects.create(site=site_b, provider=SearchProvider.GOOGLE)
+
+    client.force_authenticate(user=user_a)
+
+    # 1. Search connections list
+    resp_conn_list = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/integrations/connections/"
+    )
+    assert resp_conn_list.status_code == status.HTTP_404_NOT_FOUND
+
+    # 2. Search connection detail
+    resp_conn_detail = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/integrations/connections/{conn_b.id}/"
+    )
+    assert resp_conn_detail.status_code == status.HTTP_404_NOT_FOUND
+
+    # 3. IndexNow key
+    resp_indexnow = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/integrations/indexnow/"
+    )
+    assert resp_indexnow.status_code == status.HTTP_404_NOT_FOUND
+
+    # 4. Logs
+    resp_logs = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/integrations/logs/"
+    )
+    assert resp_logs.status_code == status.HTTP_404_NOT_FOUND

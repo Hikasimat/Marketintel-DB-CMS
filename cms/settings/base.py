@@ -130,6 +130,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "apps.sites",
         "apps.content",
         "apps.seo",
+        "apps.integrations",
     ]
     if admin_enabled:
         installed_apps.insert(0, "django.contrib.admin")
@@ -260,6 +261,11 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
             "SERVE_INCLUDE_SCHEMA": False,
             "SCHEMA_PATH_PREFIX": r"/api/v1",
             "COMPONENT_SPLIT_REQUEST": True,
+            "ENUM_NAME_OVERRIDES": {
+                "ArticleStatusEnum": "apps.content.models.ArticleStatus",
+                "ConnectionStatusEnum": "apps.integrations.models.ConnectionStatus",
+                "SubmissionStatusEnum": "apps.integrations.models.SubmissionStatus",
+            },
         },
         # --- CORS (never used as authentication; SEC-2) ---
         "CORS_ALLOWED_ORIGINS": cors_origins,

@@ -35,7 +35,7 @@ One report per stage: `stage-XX.md`. A stage may only start after the previous r
 | 2 | Authentication, tenancy, audit | PASS | [stage-02.md](stage-02.md) |
 | 3 | Sites/domains and content | PASS | [stage-03.md](stage-03.md) |
 | 4 | SEO engine | PASS | [stage-04.md](stage-04.md) |
-| 5 | Search provider integrations | — | — |
+| 5 | Search provider integrations | PASS | [stage-05.md](stage-05.md) |
 | 6 | Analytics | — | — |
 | 7 | Consent backend | — | — |
 | 8 | GitHub onboarding (feature-flagged) | — | — |
