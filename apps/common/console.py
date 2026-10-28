@@ -546,7 +546,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="articlesTableCard">
           <h3 class="card-title">Articles for Active Site</h3>
           <p class="card-desc">Draft articles are securely isolated inside your workspace backend. Only published articles appear on the public delivery API.</p>
           <div class="table-container">
@@ -902,15 +902,16 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const res = await apiCall('GET', '/api/v1/workspaces/');
       const select = document.getElementById('workspaceSelect');
       select.innerHTML = '';
-      if (res.ok && Array.isArray(res.data)) {
-        currentWorkspaces = res.data;
-        res.data.forEach(w => {
+      const items = Array.isArray(res.data) ? res.data : (res.data && res.data.results ? res.data.results : []);
+      if (res.ok && items.length > 0) {
+        currentWorkspaces = items;
+        items.forEach(w => {
           const opt = document.createElement('option');
           opt.value = w.id;
           opt.textContent = `${w.name} (${w.slug})`;
           select.appendChild(opt);
         });
-        if (res.data.length > 0) loadSites();
+        loadSites();
       }
     }
 
@@ -920,15 +921,17 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/`);
       const select = document.getElementById('siteSelect');
       select.innerHTML = '';
-      if (res.ok && Array.isArray(res.data)) {
-        currentSites = res.data;
-        res.data.forEach(s => {
+      const items = Array.isArray(res.data) ? res.data : (res.data && res.data.results ? res.data.results : []);
+      if (res.ok && items.length > 0) {
+        currentSites = items;
+        items.forEach(s => {
           const opt = document.createElement('option');
           opt.value = s.id;
           opt.dataset.slug = s.slug;
           opt.textContent = `${s.name} (${s.slug})`;
           select.appendChild(opt);
         });
+        loadArticles();
       }
     }
 
@@ -967,13 +970,15 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/articles/`);
       const tbody = document.getElementById('articlesTableBody');
       tbody.innerHTML = '';
+      document.getElementById('articlesTableCard')?.scrollIntoView({ behavior: 'smooth' });
 
-      if (res.ok && Array.isArray(res.data)) {
-        if (res.data.length === 0) {
+      const items = Array.isArray(res.data) ? res.data : (res.data && res.data.results ? res.data.results : []);
+      if (res.ok) {
+        if (items.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-dim)">No articles found in this site.</td></tr>';
           return;
         }
-        res.data.forEach(art => {
+        items.forEach(art => {
           const isPublished = art.status === 'PUBLISHED';
           const badgeStyle = isPublished
             ? 'background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);'
