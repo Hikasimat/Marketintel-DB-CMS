@@ -129,6 +129,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "apps.tenancy",
         "apps.sites",
         "apps.content",
+        "apps.seo",
     ]
     if admin_enabled:
         installed_apps.insert(0, "django.contrib.admin")

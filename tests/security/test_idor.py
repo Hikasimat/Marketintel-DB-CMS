@@ -197,3 +197,45 @@ def test_cross_site_article_isolation_within_workspace_returns_404():
         f"/api/v1/workspaces/{workspace.id}/sites/{site2.id}/articles/{art_site1.id}/"
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_cross_tenant_seo_access_returns_404():
+    client = APIClient()
+
+    user_a = User.objects.create_user(email="user_a@tenant-a.com", password="SecurePassword123!")
+    workspace_a = Workspace.objects.create(name="Tenant A", slug="tenant-a")
+    WorkspaceMembership.objects.create(workspace=workspace_a, user=user_a, role=WorkspaceRole.OWNER)
+
+    user_b = User.objects.create_user(email="user_b@tenant-b.com", password="SecurePassword123!")
+    workspace_b = Workspace.objects.create(name="Tenant B", slug="tenant-b")
+    WorkspaceMembership.objects.create(workspace=workspace_b, user=user_b, role=WorkspaceRole.OWNER)
+
+    from apps.content.models import Article
+    from apps.seo.models import ArticleSEO, RedirectRule, SiteSEOSettings
+    from apps.sites.models import Site
+
+    site_b = Site.objects.create(workspace=workspace_b, name="Site B", slug="site-b")
+    SiteSEOSettings.objects.create(site=site_b, title_suffix=" | B")
+    art_b = Article.objects.create(site=site_b, author=user_b, title="Art B", slug="art-b")
+    ArticleSEO.objects.create(article=art_b, meta_title="SEO B")
+    RedirectRule.objects.create(site=site_b, source_path="/old", target_url="/new")
+
+    client.force_authenticate(user=user_a)
+
+    # 1. Site SEO settings access
+    resp_seo = client.get(f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/seo/")
+    assert resp_seo.status_code == status.HTTP_404_NOT_FOUND
+
+    # 2. Article SEO access
+    resp_art_seo = client.get(
+        f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/articles/{art_b.id}/seo/"
+    )
+    assert resp_art_seo.status_code == status.HTTP_404_NOT_FOUND
+
+    # 3. Redirect rules list
+    resp_redirects = client.get(f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/redirects/")
+    assert resp_redirects.status_code == status.HTTP_404_NOT_FOUND
+
+    # 4. SEO audit
+    resp_audit = client.get(f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/seo-audit/")
+    assert resp_audit.status_code == status.HTTP_404_NOT_FOUND

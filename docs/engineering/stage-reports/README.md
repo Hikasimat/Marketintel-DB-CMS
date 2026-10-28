@@ -34,7 +34,7 @@ One report per stage: `stage-XX.md`. A stage may only start after the previous r
 | 1 | Project foundation | PASS | [stage-01.md](stage-01.md) |
 | 2 | Authentication, tenancy, audit | PASS | [stage-02.md](stage-02.md) |
 | 3 | Sites/domains and content | PASS | [stage-03.md](stage-03.md) |
-| 4 | SEO engine | — | — |
+| 4 | SEO engine | PASS | [stage-04.md](stage-04.md) |
 | 5 | Search provider integrations | — | — |
 | 6 | Analytics | — | — |
 | 7 | Consent backend | — | — |

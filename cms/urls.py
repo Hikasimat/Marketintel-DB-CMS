@@ -24,6 +24,7 @@ urlpatterns = [
     path("api/v1/", include("apps.audit.urls")),
     path("api/v1/", include("apps.sites.urls")),
     path("api/v1/", include("apps.content.urls")),
+    path("api/v1/", include("apps.seo.urls")),
 ]
 
 # Interactive API documentation (enabled only in non-production or when explicitly configured)
