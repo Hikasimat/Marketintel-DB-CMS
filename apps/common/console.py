@@ -822,6 +822,29 @@ CONSOLE_HTML = """<!DOCTYPE html>
         } catch {
           data = text;
         }
+
+        // Automatic transparent token refresh on token_expired
+        if (res.status === 401 && requireAuth && data && data.error && data.error.code === 'token_expired') {
+          const email = document.getElementById('authEmail')?.value || 'admin@cms.local';
+          const password = document.getElementById('authPassword')?.value || 'AdminPassword123!';
+          const reloginRes = await fetch('/api/v1/auth/login/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          if (reloginRes.ok) {
+            const reloginData = await reloginRes.json();
+            if (reloginData.access) {
+              authToken = reloginData.access;
+              localStorage.setItem('cms_jwt_token', authToken);
+              document.getElementById('tokenDisplay').textContent = authToken;
+              headers['Authorization'] = `Bearer ${authToken}`;
+              res = await fetch(path, options);
+              const retryText = await res.text();
+              try { data = JSON.parse(retryText); } catch { data = retryText; }
+            }
+          }
+        }
       } catch (err) {
         data = { error: err.message };
         res = { status: 500, ok: false };
