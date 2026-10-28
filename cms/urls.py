@@ -4,15 +4,20 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.urls import include, path
+from django.views.generic import RedirectView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
 
+from apps.common.console import testing_console_view
 from apps.common.health import LiveCheckView, ReadyCheckView
 
 urlpatterns = [
+    # Interactive Developer & QA Testing Console
+    path("console/", testing_console_view, name="testing_console"),
+    path("", RedirectView.as_view(url="/console/", permanent=False)),
     # Health and readiness probes (unauthenticated, exempted from HTTPS redirect)
     path("health/live", LiveCheckView.as_view(), name="health_live"),
     path("health/ready", ReadyCheckView.as_view(), name="health_ready"),

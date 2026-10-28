@@ -213,8 +213,8 @@ def get_github_client() -> BaseGitHubClient:
                 path = Path(settings.BASE_DIR) / path
             if path.is_file():
                 private_key = path.read_text(encoding="utf-8")
-        except Exception:
-            pass
+        except OSError:
+            logger.debug("Path is not a valid readable private key file", exc_info=True)
     # Default to deterministic mock client unless in live prod with explicit keys
     if (
         getattr(settings, "GITHUB_APP_ENABLED", False)

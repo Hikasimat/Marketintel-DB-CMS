@@ -41,7 +41,7 @@ def _load_dotenv(path: Path) -> None:
                     ):
                         val = val[1:-1]
                     os.environ.setdefault(key, val)
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         pass
 
 
