@@ -27,10 +27,7 @@ def ingest_first_party_event(
     consent_granted: bool = False,
 ) -> AnalyticsEvent:
     """Ingest a privacy-preserving first-party analytics event (ANA-4, ANA-5, ANA-6)."""
-    try:
-        config = site.analytics_config
-    except SiteAnalyticsConfig.DoesNotExist:
-        config = SiteAnalyticsConfig.objects.create(site=site)
+    config, _ = SiteAnalyticsConfig.objects.get_or_create(site=site)
 
     if not config.is_first_party_enabled:
         raise ValidationError("First-party analytics event ingestion is disabled for this site.")

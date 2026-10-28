@@ -139,10 +139,9 @@ class GA4ConnectionView(APIView):
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
 
-        try:
-            conn = site.ga4_connection
-        except GA4Connection.DoesNotExist as exc:
-            raise NotFound("GA4 connection not configured for this site.") from exc
+        conn = GA4Connection.objects.filter(site=site).first()
+        if not conn:
+            raise NotFound("GA4 connection not configured for this site.")
 
         serializer = GA4ConnectionSerializer(conn)
         return Response(serializer.data)
@@ -182,10 +181,9 @@ class GA4ConnectionView(APIView):
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
 
-        try:
-            conn = site.ga4_connection
-        except GA4Connection.DoesNotExist as exc:
-            raise NotFound("GA4 connection not found.") from exc
+        conn = GA4Connection.objects.filter(site=site).first()
+        if not conn:
+            raise NotFound("GA4 connection not found.")
 
         conn_id = str(conn.id)
         property_id = conn.property_id
@@ -216,10 +214,9 @@ class GA4ReportView(APIView):
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
 
-        try:
-            conn = site.ga4_connection
-        except GA4Connection.DoesNotExist as exc:
-            raise ValidationError("GA4 connection not configured for this site.") from exc
+        conn = GA4Connection.objects.filter(site=site).first()
+        if not conn:
+            raise ValidationError("GA4 connection not configured for this site.")
 
         if not conn.is_active:
             raise ValidationError("GA4 connection is inactive.")

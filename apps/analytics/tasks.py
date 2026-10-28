@@ -13,6 +13,7 @@ from apps.analytics.adapters.ga4 import GA4ReportingAdapter
 from apps.analytics.models import (
     AnalyticsEvent,
     AnalyticsReportSnapshot,
+    GA4Connection,
     SiteAnalyticsConfig,
 )
 from apps.sites.models import Site
@@ -61,7 +62,7 @@ def refresh_ga4_report_snapshot(
     """Background task to fetch and cache GA4 reporting data."""
     try:
         site = Site.objects.get(id=site_id)
-        connection = site.ga4_connection
+        connection = GA4Connection.objects.get(site=site)
     except Exception as exc:
         logger.warning("Site or GA4 connection not found for id %s: %s", site_id, exc)
         return {"status": "ERROR", "error": str(exc)}
