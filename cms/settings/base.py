@@ -338,6 +338,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "SECURE_PROXY_SSL_HEADER": ("HTTP_X_FORWARDED_PROTO", "https")
         if trust_forwarded_proto
         else None,
+        "IS_TEST": is_test,
         # --- Celery ---
         "CELERY_BROKER_URL": redis_url or "memory://",
         "CELERY_RESULT_BACKEND": None,
