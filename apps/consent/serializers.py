@@ -165,14 +165,23 @@ class PublicConsentSubmitSerializer(serializers.Serializer[Any]):
         max_length=50, required=False, allow_blank=True, default=""
     )
     categories = serializers.DictField(child=serializers.BooleanField())
-    consent_type = serializers.ChoiceField(
-        choices=[
-            ConsentType.EXPLICIT_OPT_IN,
-            ConsentType.OPT_OUT,
-            ConsentType.IMPLICIT_NECESSARY_ONLY,
-        ],
+    consent_type = serializers.CharField(
+        required=False,
         default=ConsentType.EXPLICIT_OPT_IN,
     )
+
+    def validate_consent_type(self, value: str) -> str:
+        val_upper = str(value).strip().upper()
+        if val_upper in ("OPT_IN", "EXPLICIT_OPT_IN"):
+            return ConsentType.EXPLICIT_OPT_IN
+        if val_upper in ("OPT_OUT", "OPTOUT"):
+            return ConsentType.OPT_OUT
+        if val_upper in (ConsentType.IMPLICIT_NECESSARY_ONLY, "NECESSARY"):
+            return ConsentType.IMPLICIT_NECESSARY_ONLY
+        valid = ", ".join(
+            [ConsentType.EXPLICIT_OPT_IN, ConsentType.OPT_OUT, ConsentType.IMPLICIT_NECESSARY_ONLY]
+        )
+        raise serializers.ValidationError(f"Invalid consent_type '{value}'. Valid: {valid}")
 
     def validate_visitor_id(self, value: str) -> str:
         validate_visitor_id(value)

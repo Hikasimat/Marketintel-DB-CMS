@@ -594,8 +594,9 @@ CONSOLE_HTML = """<!DOCTYPE html>
             <div class="form-group">
               <label class="form-label">Provider</label>
               <select id="indexingProvider">
-                <option value="google">Google Search Console</option>
-                <option value="bing">Bing Webmaster (IndexNow)</option>
+                <option value="GOOGLE">Google Search Console</option>
+                <option value="BING">Bing Webmaster (IndexNow)</option>
+                <option value="INDEXNOW">IndexNow Protocol</option>
               </select>
             </div>
             <div class="form-group">
@@ -969,18 +970,25 @@ CONSOLE_HTML = """<!DOCTYPE html>
 
       if (res.ok && Array.isArray(res.data)) {
         if (res.data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-dim)">No articles found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-dim)">No articles found in this site.</td></tr>';
           return;
         }
         res.data.forEach(art => {
+          const isPublished = art.status === 'PUBLISHED';
+          const badgeStyle = isPublished
+            ? 'background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);'
+            : 'background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);';
+          const badgeText = isPublished ? '🟢 LIVE PUBLISHED' : '🟡 DRAFT (Private)';
+          const actionBtn = isPublished
+            ? `<button class="btn btn-secondary" style="font-size:0.75rem; padding:0.28rem 0.65rem;" onclick="publishArticle('${art.id}')">Re-Publish</button>`
+            : `<button class="btn btn-success" style="font-size:0.75rem; padding:0.28rem 0.75rem; font-weight:700;" onclick="publishArticle('${art.id}')">🚀 Publish to Site</button>`;
+
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><strong>${art.title}</strong></td>
             <td><code>${art.slug}</code></td>
-            <td><span class="inspector-badge">${art.status}</span></td>
-            <td>
-              <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.5rem" onclick="publishArticle('${art.id}')">Publish</button>
-            </td>
+            <td><span style="${badgeStyle} padding:3px 8px; border-radius:4px; font-weight:600; font-size:0.75rem;">${badgeText}</span></td>
+            <td>${actionBtn}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -992,7 +1000,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const sId = document.getElementById('siteSelect').value;
       const res = await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/articles/${artId}/publish/`);
       if (res.ok) {
-        alert('Article published! Live on public delivery API.');
+        alert('Article published! Live snapshot created and instantly viewable on public frontend.');
         loadArticles();
       }
     }
@@ -1054,7 +1062,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const visitorId = 'vis-' + Math.random().toString(36).substring(2, 10);
       const sessionId = 'ses-' + Math.random().toString(36).substring(2, 10);
 
-      await apiCall('POST', `/api/v1/public/sites/${slug}/analytics/events/`, {
+      await apiCall('POST', `/api/v1/public/sites/${slug}/events`, {
         event_type: eventType,
         visitor_id: visitorId,
         session_id: sessionId,
@@ -1110,7 +1118,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
           analytics: analyticsChoice,
           marketing: marketingChoice
         },
-        consent_type: (analyticsChoice && marketingChoice) ? 'OPT_IN' : 'OPT_OUT'
+        consent_type: (analyticsChoice && marketingChoice) ? 'EXPLICIT_OPT_IN' : 'OPT_OUT'
       }, false);
     }
 

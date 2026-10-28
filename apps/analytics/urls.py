@@ -48,8 +48,24 @@ urlpatterns = [
         name="public_config",
     ),
     path(
+        "public/sites/<slug:site_slug>/analytics-config/",
+        PublicAnalyticsConfigView.as_view(),
+    ),
+    path(
         "public/sites/<slug:site_slug>/events",
         PublicEventIngestView.as_view(),
         name="public_ingest",
+    ),
+    path(
+        "public/sites/<slug:site_slug>/events/",
+        PublicEventIngestView.as_view(),
+    ),
+    path(
+        "public/sites/<slug:site_slug>/analytics/events",
+        PublicEventIngestView.as_view(),
+    ),
+    path(
+        "public/sites/<slug:site_slug>/analytics/events/",
+        PublicEventIngestView.as_view(),
     ),
 ]

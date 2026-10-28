@@ -117,13 +117,20 @@ class IndexSubmissionLogSerializer(serializers.ModelSerializer[IndexSubmissionLo
 class ManualSubmissionSerializer(serializers.Serializer[Any]):
     """Request serializer for manual URL batch submission to search engines."""
 
-    provider = serializers.ChoiceField(choices=SearchProvider.choices)
+    provider = serializers.CharField()
     urls = serializers.ListField(
         child=serializers.URLField(),
         min_length=1,
         max_length=10000,
         help_text="List of article or page URLs to submit.",
     )
+
+    def validate_provider(self, value: str) -> str:
+        val_upper = str(value).strip().upper()
+        if val_upper not in SearchProvider.values:
+            valid = ", ".join(SearchProvider.values)
+            raise serializers.ValidationError(f"Invalid provider '{value}'. Valid choices: {valid}")
+        return val_upper
 
 
 class UrlInspectionRequestSerializer(serializers.Serializer[Any]):
