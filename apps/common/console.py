@@ -489,11 +489,11 @@ CONSOLE_HTML = """<!DOCTYPE html>
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Selected Workspace</label>
-              <select id="workspaceSelect" onchange="loadSites()"><option>Loading...</option></select>
+              <select id="workspaceSelect" onchange="loadSites()"><option value="">Logging in...</option></select>
             </div>
             <div class="form-group">
               <label class="form-label">Selected Site</label>
-              <select id="siteSelect"><option>Loading...</option></select>
+              <select id="siteSelect"><option value="">Logging in...</option></select>
             </div>
           </div>
         </div>
@@ -802,6 +802,15 @@ CONSOLE_HTML = """<!DOCTYPE html>
 
     // Central API Fetch Wrapper with Realtime Logging
     async function apiCall(method, path, body = null, requireAuth = true) {
+      // Ensure we have a session before any authenticated call
+      if (requireAuth && !authToken) {
+        await login(true);
+      }
+      // Refuse to call endpoints with missing workspace/site IDs
+      if (['/workspaces//', '/sites//', 'undefined', 'Loading...'].some(bad => path.includes(bad))) {
+        alert('Select a Workspace and Site first (Workspaces & Sites tab). If the lists are empty, click Login in the Auth tab.');
+        return { status: 0, ok: false, data: { error: 'Missing workspace/site selection' } };
+      }
       const startTime = performance.now();
       const headers = { 'Content-Type': 'application/json' };
       if (requireAuth && authToken) {
@@ -885,7 +894,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
     }
 
     // Auth Operations
-    async function login() {
+    async function login(silent = false) {
       const email = document.getElementById('authEmail').value;
       const password = document.getElementById('authPassword').value;
       const res = await apiCall('POST', '/api/v1/auth/login/', { email, password }, false);
@@ -895,7 +904,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
         document.getElementById('tokenDisplay').textContent = authToken;
         document.getElementById('headerUserEmail').textContent = email;
         await loadWorkspaces();
-      } else {
+      } else if (!silent) {
         alert('Login failed: ' + JSON.stringify(res.data));
       }
     }
@@ -1042,14 +1051,14 @@ CONSOLE_HTML = """<!DOCTYPE html>
     // SEO Previews & Integrations
     async function previewSitemap() {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
-      const slug = sOpt ? sOpt.dataset.slug : 'default';
+      const slug = (sOpt && sOpt.dataset.slug) ? sOpt.dataset.slug : 'techradar-demo';
       const res = await apiCall('GET', `/api/v1/public/sites/${slug}/sitemap.xml`, null, false);
       document.getElementById('seoPreviewDisplay').textContent = typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2);
     }
 
     async function previewRobots() {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
-      const slug = sOpt ? sOpt.dataset.slug : 'default';
+      const slug = (sOpt && sOpt.dataset.slug) ? sOpt.dataset.slug : 'techradar-demo';
       const res = await apiCall('GET', `/api/v1/public/sites/${slug}/robots.txt`, null, false);
       document.getElementById('seoPreviewDisplay').textContent = typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2);
     }
@@ -1086,7 +1095,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
     // Analytics Ingestion, Overview & GA4
     async function ingestEvent(eventType, path) {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
-      const slug = sOpt ? sOpt.dataset.slug : 'default';
+      const slug = (sOpt && sOpt.dataset.slug) ? sOpt.dataset.slug : 'techradar-demo';
       const visitorId = 'vis-' + Math.random().toString(36).substring(2, 10);
       const sessionId = 'ses-' + Math.random().toString(36).substring(2, 10);
 
@@ -1223,11 +1232,13 @@ CONSOLE_HTML = """<!DOCTYPE html>
       await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/open-pr/`);
     }
 
-    // Check existing stored token
+    // Establish session on load: reuse stored token, otherwise auto-login with the prefilled demo credentials
+    let sessionReady;
     if (authToken) {
       document.getElementById('tokenDisplay').textContent = authToken;
-      fetchMe();
-      loadWorkspaces();
+      sessionReady = fetchMe().then(() => loadWorkspaces());
+    } else {
+      sessionReady = login(true);
     }
 
     // Auto-detect GitHub App Installation callback from query params
@@ -1237,13 +1248,13 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const input = document.getElementById('ghInstallationId');
       if (input) input.value = instParam;
       if (urlParams.get('installed')) {
-        setTimeout(() => {
+        sessionReady.then(() => {
           document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
           document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
           document.getElementById('tab-github')?.classList.add('active');
           alert('GitHub App successfully installed! Installation ID ' + instParam + ' registered.');
           fetchAccessibleRepos();
-        }, 500);
+        });
       }
     }
   </script>
