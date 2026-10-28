@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.urls import path
 
 from apps.github_integration.views import (
+    GitHubSetupRedirectView,
     GitHubWebhookView,
     SiteGitHubAnalyzeView,
     SiteGitHubConnectionView,
@@ -18,6 +19,9 @@ from apps.github_integration.views import (
 app_name = "github_integration"
 
 urlpatterns = [
+    # Post-installation redirect from GitHub App (Setup URL)
+    path("integrations/github/setup", GitHubSetupRedirectView.as_view(), name="github_setup"),
+    path("integrations/github/setup/", GitHubSetupRedirectView.as_view()),
     # Inbound webhook ingestion (GH-6)
     path("webhooks/github/", GitHubWebhookView.as_view(), name="github_webhook"),
     # Workspace-level GitHub App installations (GH-1, GH-2)

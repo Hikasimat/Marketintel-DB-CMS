@@ -1090,13 +1090,22 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const visitorId = 'vis-' + Math.random().toString(36).substring(2, 10);
       const sessionId = 'ses-' + Math.random().toString(36).substring(2, 10);
 
+      let properties = {};
+      if (eventType === 'page_view') {
+        properties = { path: path, referrer: 'https://techradar.io', title: 'TechRadar Demo' };
+      } else if (eventType === 'cta_click') {
+        properties = { path: path, cta_id: 'cta-primary', cta_text: 'Get Started', target_url: 'https://techradar.io/pricing' };
+      } else if (eventType === 'form_submit') {
+        properties = { path: path, form_id: 'form-contact-01', form_name: 'Lead Contact Form' };
+      }
+
       await apiCall('POST', `/api/v1/public/sites/${slug}/events`, {
         event_type: eventType,
         visitor_id: visitorId,
         session_id: sessionId,
         path: path,
         consent_granted: true,
-        properties: { timestamp: new Date().toISOString() }
+        properties: properties
       }, false);
     }
 
@@ -1122,7 +1131,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
       const wId = document.getElementById('workspaceSelect').value;
       const sId = document.getElementById('siteSelect').value;
       await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/ga4/`, {
-        property_id: 'properties/123456789',
+        property_id: '123456789',
         measurement_id: 'G-DEMOTEST12',
         credentials: { client_id: 'demo-client', client_secret: 'demo-secret' }
       });
@@ -1131,7 +1140,10 @@ CONSOLE_HTML = """<!DOCTYPE html>
     async function fetchGA4Report() {
       const wId = document.getElementById('workspaceSelect').value;
       const sId = document.getElementById('siteSelect').value;
-      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/reports/ga4/?start_date=30daysAgo&end_date=today`);
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const past = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/reports/ga4/?start_date=${past}&end_date=${today}`);
     }
 
     // Consent Operations
@@ -1216,6 +1228,23 @@ CONSOLE_HTML = """<!DOCTYPE html>
       document.getElementById('tokenDisplay').textContent = authToken;
       fetchMe();
       loadWorkspaces();
+    }
+
+    // Auto-detect GitHub App Installation callback from query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const instParam = urlParams.get('installation_id');
+    if (instParam) {
+      const input = document.getElementById('ghInstallationId');
+      if (input) input.value = instParam;
+      if (urlParams.get('installed')) {
+        setTimeout(() => {
+          document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+          document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+          document.getElementById('tab-github')?.classList.add('active');
+          alert('GitHub App successfully installed! Installation ID ' + instParam + ' registered.');
+          fetchAccessibleRepos();
+        }, 500);
+      }
     }
   </script>
 </body>

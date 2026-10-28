@@ -10,6 +10,7 @@ import uuid
 from typing import Any
 
 from django.conf import settings
+from django.http import HttpResponseRedirect
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
@@ -645,3 +646,36 @@ class SiteGitHubIntegrationPRView(APIView):
 
         out_serializer = IntegrationPRResponseSerializer(pr_record)
         return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GitHubSetupRedirectView(APIView):
+    """Handle post-installation redirect from GitHub App (Setup URL)."""
+
+    permission_classes = (permissions.AllowAny,)
+
+    @extend_schema(
+        summary="GitHub App Post-Installation Setup Callback",
+        description="Receives installation_id after user installs app on GitHub and registers it.",
+        responses={302: OpenApiResponse(description="Redirects to /console/")},
+        tags=["GitHub Integration"],
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        installation_id = request.query_params.get("installation_id")
+        if installation_id:
+            try:
+                inst_id_int = int(installation_id)
+                ws = Workspace.objects.first()
+                if ws:
+                    GitHubAppInstallation.objects.update_or_create(
+                        workspace=ws,
+                        installation_id=inst_id_int,
+                        defaults={
+                            "account_login": "reactapplicationdeveloper-bot",
+                            "account_type": "User",
+                            "is_active": True,
+                        },
+                    )
+            except Exception:
+                logger.debug("Failed to record github installation from setup", exc_info=True)
+        url = f"/console/?installed=true&installation_id={installation_id or ''}"
+        return HttpResponseRedirect(url)

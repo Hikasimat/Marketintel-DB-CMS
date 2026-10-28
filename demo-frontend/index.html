@@ -588,7 +588,14 @@
     // 3. Emit Privacy Analytics Event (Zero raw IP, coarsened UA)
     async function ingestEvent(eventType, path) {
       try {
-        const res = await fetch(`${cmsApiUrl}/api/v1/public/sites/${siteSlug}/analytics/events/`, {
+        let properties = {};
+        if (eventType === 'page_view') {
+          properties = { path: path, referrer: document.referrer || 'https://techradar.io', title: 'TechRadar Client' };
+        } else if (eventType === 'cta_click') {
+          properties = { path: path, cta_id: 'btn-client', cta_text: 'Share', target_url: path };
+        }
+
+        const res = await fetch(`${cmsApiUrl}/api/v1/public/sites/${siteSlug}/events`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -597,11 +604,11 @@
             session_id: sessionId,
             path: path,
             consent_granted: safeStorage.get('demo_consent') === 'true',
-            properties: { client: 'TechRadar Frontend Client v1.0' }
+            properties: properties
           })
         });
         if (res.ok) {
-          showToast('Event Ingested', `POST /analytics/events/ (${eventType} -> ${path})`);
+          showToast('Event Ingested', `POST /events (${eventType} -> ${path})`);
         }
       } catch (err) {
         console.warn('Analytics event failed', err);
