@@ -70,9 +70,17 @@ urlpatterns = [
         name="public_consent_config",
     ),
     path(
+        "public/sites/<slug:site_slug>/consent-config/",
+        PublicBannerConfigView.as_view(),
+    ),
+    path(
         "public/sites/<slug:site_slug>/consent/banner-config",
         PublicBannerConfigView.as_view(),
         name="public_banner_config",
+    ),
+    path(
+        "public/sites/<slug:site_slug>/consent/banner-config/",
+        PublicBannerConfigView.as_view(),
     ),
     path(
         "public/sites/<slug:site_slug>/consent",
@@ -80,13 +88,25 @@ urlpatterns = [
         name="public_consent_submit",
     ),
     path(
+        "public/sites/<slug:site_slug>/consent/",
+        PublicConsentSubmitView.as_view(),
+    ),
+    path(
         "public/sites/<slug:site_slug>/consent/withdraw",
         PublicConsentWithdrawView.as_view(),
         name="public_consent_withdraw",
     ),
     path(
+        "public/sites/<slug:site_slug>/consent/withdraw/",
+        PublicConsentWithdrawView.as_view(),
+    ),
+    path(
         "public/sites/<slug:site_slug>/consent/status",
         PublicConsentStatusView.as_view(),
         name="public_consent_status",
+    ),
+    path(
+        "public/sites/<slug:site_slug>/consent/status/",
+        PublicConsentStatusView.as_view(),
     ),
 ]

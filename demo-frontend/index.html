@@ -620,17 +620,19 @@
       document.getElementById('consentBanner').style.display = 'none';
 
       try {
-        await fetch(`${cmsApiUrl}/api/v1/public/sites/${siteSlug}/consent/records/`, {
+        await fetch(`${cmsApiUrl}/api/v1/public/sites/${siteSlug}/consent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             visitor_id: visitorId,
-            jurisdiction_mode: 'EU_GDPR',
-            consent_type: choice ? 'FULL_CONSENT' : 'REJECT_ALL',
-            choices: { analytics: choice, marketing: choice }
+            categories: {
+              analytics: choice,
+              marketing: choice
+            },
+            consent_type: choice ? 'OPT_IN' : 'OPT_OUT'
           })
         });
-        showToast('Consent Recorded', `POST /consent/records/ (choice=${choice ? 'GRANT' : 'REJECT'})`);
+        showToast('Consent Recorded', `POST /consent (choice=${choice ? 'GRANT' : 'REJECT'})`);
       } catch (err) {
         console.warn('Consent record failed', err);
       }

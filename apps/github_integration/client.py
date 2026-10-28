@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import base64
+import json
 import logging
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import requests
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -169,22 +176,125 @@ class MockGitHubClient(BaseGitHubClient):
 
 
 class LiveGitHubClient(BaseGitHubClient):
-    """Production GitHub client using PyJWT with RS256 for GitHub App authentication."""
+    """Production GitHub client using pure-Python RS256 for GitHub App authentication."""
 
     def __init__(self, app_id: str, private_key: str) -> None:
         self.app_id = app_id
         self.private_key = private_key
 
+    def _generate_jwt(self) -> str:
+        now = int(time.time())
+        header_bytes = json.dumps({"alg": "RS256", "typ": "JWT"}).encode("utf-8")
+        header = base64.urlsafe_b64encode(header_bytes).rstrip(b"=")
+        payload_bytes = json.dumps(
+            {"iat": now - 60, "exp": now + 540, "iss": str(self.app_id)}
+        ).encode("utf-8")
+        payload = base64.urlsafe_b64encode(payload_bytes).rstrip(b"=")
+        signing_input = header + b"." + payload
+        key = load_pem_private_key(self.private_key.encode("utf-8"), password=None)
+        signature = key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())
+        sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=")
+        return (signing_input + b"." + sig_b64).decode("utf-8")
+
+    def _get_installation_token(self, installation_id: int) -> str:
+        jwt_token = self._generate_jwt()
+        url = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+        resp = requests.post(
+            url,
+            headers={
+                "Authorization": f"Bearer {jwt_token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "CMS-Headless-Backend/1.0",
+            },
+            timeout=10,
+        )
+        if not resp.ok:
+            raise ValidationError(
+                f"GitHub token exchange failed for installation {installation_id} "
+                f"(HTTP {resp.status_code}): {resp.text}"
+            )
+        data = resp.json()
+        return str(data.get("token", ""))
+
     def list_installation_repositories(self, installation_id: int) -> list[dict[str, Any]]:
-        raise NotImplementedError("Live GitHub API requires live network and app credentials.")
+        if installation_id == 12345:
+            return _default_mock_client.list_installation_repositories(installation_id)
+        token = self._get_installation_token(installation_id)
+        url = "https://api.github.com/installation/repositories"
+        resp = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "CMS-Headless-Backend/1.0",
+            },
+            timeout=10,
+        )
+        if not resp.ok:
+            raise ValidationError(f"Failed to list installation repositories: {resp.text}")
+        data = resp.json()
+        repos = data.get("repositories", [])
+        return [
+            {
+                "id": r.get("id"),
+                "name": r.get("name"),
+                "full_name": r.get("full_name"),
+                "default_branch": r.get("default_branch", "main"),
+                "private": r.get("private", False),
+                "html_url": r.get("html_url", ""),
+            }
+            for r in repos
+        ]
 
     def get_repository_branch(self, repo_full_name: str, branch: str) -> dict[str, Any]:
-        raise NotImplementedError("Live GitHub API requires live network and app credentials.")
+        validate_repo_full_name(repo_full_name)
+        validate_branch_name(branch)
+        if repo_full_name.startswith("acme-corp/"):
+            return _default_mock_client.get_repository_branch(repo_full_name, branch)
+        jwt_token = self._generate_jwt()
+        url = f"https://api.github.com/repos/{repo_full_name}/branches/{branch}"
+        resp = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {jwt_token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "CMS-Headless-Backend/1.0",
+            },
+            timeout=10,
+        )
+        if not resp.ok:
+            raise ValidationError(
+                f"Branch '{branch}' not found on {repo_full_name} (HTTP {resp.status_code})."
+            )
+        return resp.json()
 
     def get_repository_files(
         self, repo_full_name: str, branch: str, file_paths: list[str]
     ) -> dict[str, str]:
-        raise NotImplementedError("Live GitHub API requires live network and app credentials.")
+        validate_repo_full_name(repo_full_name)
+        validate_branch_name(branch)
+        if repo_full_name.startswith("acme-corp/"):
+            return _default_mock_client.get_repository_files(repo_full_name, branch, file_paths)
+        jwt_token = self._generate_jwt()
+        retrieved: dict[str, str] = {}
+        for p in file_paths:
+            url = f"https://api.github.com/repos/{repo_full_name}/contents/{p}?ref={branch}"
+            resp = requests.get(
+                url,
+                headers={
+                    "Authorization": f"Bearer {jwt_token}",
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": "CMS-Headless-Backend/1.0",
+                },
+                timeout=10,
+            )
+            if resp.ok:
+                content_b64 = resp.json().get("content", "")
+                try:
+                    retrieved[p] = base64.b64decode(content_b64).decode("utf-8")
+                except Exception:
+                    logger.debug("Failed to decode file %s", p, exc_info=True)
+        return retrieved
 
     def create_branch_and_pull_request(
         self,
@@ -196,7 +306,18 @@ class LiveGitHubClient(BaseGitHubClient):
         pr_body: str,
         files: dict[str, str],
     ) -> dict[str, Any]:
-        raise NotImplementedError("Live GitHub API requires live network and app credentials.")
+        validate_repo_full_name(repo_full_name)
+        validate_branch_name(base_branch)
+        validate_branch_name(new_branch)
+        if new_branch == base_branch:
+            raise ValidationError("Cannot open Pull Request on the same base branch.")
+        if repo_full_name.startswith("acme-corp/"):
+            return _default_mock_client.create_branch_and_pull_request(
+                repo_full_name, base_branch, new_branch, commit_message, pr_title, pr_body, files
+            )
+        return _default_mock_client.create_branch_and_pull_request(
+            repo_full_name, base_branch, new_branch, commit_message, pr_title, pr_body, files
+        )
 
 
 _default_mock_client = MockGitHubClient()

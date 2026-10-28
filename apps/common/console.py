@@ -539,14 +539,16 @@ CONSOLE_HTML = """<!DOCTYPE html>
             <label class="form-label">Body Content (Markdown or HTML)</label>
             <textarea id="artBody" rows="4"># Next-Gen AI Agents\n\nAutonomous agentic workflows represent the future of software development.</textarea>
           </div>
-          <div style="display:flex; gap:0.75rem">
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem">
             <button class="btn btn-primary" onclick="createArticle()">Create Draft Article</button>
-            <button class="btn btn-secondary" onclick="loadArticles()">List Articles</button>
+            <button class="btn btn-secondary" onclick="loadArticles()">List Workspace Articles</button>
+            <button class="btn btn-secondary" onclick="viewPublicDelivery()">Compare With Public Delivery API</button>
           </div>
         </div>
 
         <div class="card">
           <h3 class="card-title">Articles for Active Site</h3>
+          <p class="card-desc">Draft articles are securely isolated inside your workspace backend. Only published articles appear on the public delivery API.</p>
           <div class="table-container">
             <table>
               <thead>
@@ -558,7 +560,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
                 </tr>
               </thead>
               <tbody id="articlesTableBody">
-                <tr><td colspan="4" style="text-align:center; color:var(--text-dim)">Click "List Articles" to fetch.</td></tr>
+                <tr><td colspan="4" style="text-align:center; color:var(--text-dim)">Click "List Workspace Articles" to fetch.</td></tr>
               </tbody>
             </table>
           </div>
@@ -568,7 +570,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
       <!-- TAB 4: SEO & SITEMAPS -->
       <section id="tab-seo" class="tab-content">
         <div class="card">
-          <h2 class="card-title">🔍 Search Engine Optimization</h2>
+          <h2 class="card-title">🔍 Search Engine Optimization & Previews</h2>
           <p class="card-desc">Canonical link relations, title formats, robots.txt, and dynamic XML sitemaps.</p>
 
           <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem">
@@ -576,6 +578,32 @@ CONSOLE_HTML = """<!DOCTYPE html>
             <button class="btn btn-secondary" onclick="previewRobots()">Preview Robots.txt</button>
           </div>
           <pre id="seoPreviewDisplay" style="max-height:220px">Click one of the preview buttons above to view output.</pre>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">🔍 Search Console & Indexing Providers (Google & Bing)</h3>
+          <p class="card-desc">Google Indexing API and IndexNow real-time crawl submissions.</p>
+
+          <div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1rem">
+            <button class="btn btn-secondary" onclick="checkSearchProviders()">Check Configured Providers</button>
+            <button class="btn btn-secondary" onclick="inspectIndexNowKey()">Inspect IndexNow Key</button>
+            <button class="btn btn-secondary" onclick="viewIndexingLogs()">View Submission Logs</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Provider</label>
+              <select id="indexingProvider">
+                <option value="google">Google Search Console</option>
+                <option value="bing">Bing Webmaster (IndexNow)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL To Submit For Indexing</label>
+              <input type="url" id="indexingUrl" value="https://techradar.io/articles/future-of-autonomous-ai-agents">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="submitUrlForIndexing()">Submit URL for Indexing</button>
         </div>
       </section>
 
@@ -610,6 +638,16 @@ CONSOLE_HTML = """<!DOCTYPE html>
             <button class="btn btn-secondary" onclick="ingestEvent('cta_click', '/pricing')">Simulate CTA Click</button>
             <button class="btn btn-secondary" onclick="ingestEvent('form_submit', '/contact')">Simulate Form Submit</button>
             <button class="btn btn-primary" onclick="loadAnalyticsMetrics()">Fetch Aggregated Metrics</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">📈 Google Analytics 4 (GA4) Integration</h3>
+          <p class="card-desc">OAuth token synchronization and server-side GA4 reporting.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:0.6rem">
+            <button class="btn btn-secondary" onclick="checkAnalyticsConfig()">Check Site Analytics Config</button>
+            <button class="btn btn-secondary" onclick="connectGA4Mock()">Connect GA4 Property</button>
+            <button class="btn btn-primary" onclick="fetchGA4Report()">Fetch GA4 Live Report</button>
           </div>
         </div>
       </section>
@@ -647,7 +685,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
       <section id="tab-github" class="tab-content">
         <div class="card">
           <h2 class="card-title">🐙 GitHub App Integration Status</h2>
-          <p class="card-desc">Non-destructive PR generation, safe manifest parsing (max 500 KB), and webhook verification.</p>
+          <p class="card-desc">Authorized GitHub App, repository inspection, framework detection, and non-destructive PR generation.</p>
 
           <div class="stats-row">
             <div class="stat-card">
@@ -659,13 +697,51 @@ CONSOLE_HTML = """<!DOCTYPE html>
               <div class="stat-label">App ID</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val" style="color:var(--accent-emerald)">VALID</div>
+              <div class="stat-val" style="color:var(--accent-emerald)">LOADED</div>
               <div class="stat-label">RSA Private Key</div>
             </div>
           </div>
 
-          <div style="display:flex; gap:0.75rem">
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.5rem">
+            <a href="https://github.com/apps/cms-integration" target="_blank" class="btn btn-secondary" style="text-decoration:none">
+              Open App on GitHub (Install / Manage) ↗
+            </a>
             <button class="btn btn-secondary" onclick="fetchInstallations()">List Authorized Installations</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">📂 Inspect Accessible Repositories</h3>
+          <p class="card-desc">Query repositories granted to your GitHub App installation.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Installation ID</label>
+              <input type="number" id="ghInstallationId" value="12345" placeholder="e.g. 12345 or from installations list">
+            </div>
+          </div>
+          <div style="display:flex; gap:0.75rem">
+            <button class="btn btn-primary" onclick="fetchAccessibleRepos()">Fetch Accessible Repositories</button>
+          </div>
+          <div id="repoListDisplay" style="margin-top:1rem"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">🔗 Connect Repository & Run Automation</h3>
+          <p class="card-desc">Link a repository to active site, detect framework (Next.js/Vite/Astro), and create integration PR.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Repository Full Name</label>
+              <input type="text" id="ghRepoFullName" value="acme-corp/nextjs-frontend" placeholder="owner/repo">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Base Branch</label>
+              <input type="text" id="ghBaseBranch" value="main">
+            </div>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem">
+            <button class="btn btn-secondary" onclick="connectRepoToSite()">Connect Repo to Site</button>
+            <button class="btn btn-secondary" onclick="analyzeConnectedRepo()">Detect Framework</button>
+            <button class="btn btn-success" onclick="openIntegrationPR()">Open Integration PR</button>
           </div>
         </div>
       </section>
@@ -921,7 +997,13 @@ CONSOLE_HTML = """<!DOCTYPE html>
       }
     }
 
-    // SEO Previews
+    async function viewPublicDelivery() {
+      const sOpt = document.getElementById('siteSelect').selectedOptions[0];
+      const slug = (sOpt && sOpt.dataset.slug) ? sOpt.dataset.slug : 'techradar-demo';
+      await apiCall('GET', `/api/v1/public/sites/${slug}/articles/`, null, false);
+    }
+
+    // SEO Previews & Integrations
     async function previewSitemap() {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
       const slug = sOpt ? sOpt.dataset.slug : 'default';
@@ -936,7 +1018,36 @@ CONSOLE_HTML = """<!DOCTYPE html>
       document.getElementById('seoPreviewDisplay').textContent = typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2);
     }
 
-    // Analytics Ingestion & Overview
+    async function checkSearchProviders() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/integrations/connections/`);
+    }
+
+    async function inspectIndexNowKey() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/integrations/indexnow/`);
+    }
+
+    async function viewIndexingLogs() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/integrations/logs/`);
+    }
+
+    async function submitUrlForIndexing() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      const provider = document.getElementById('indexingProvider').value;
+      const url = document.getElementById('indexingUrl').value;
+      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/integrations/submit/`, {
+        provider,
+        urls: [url]
+      });
+    }
+
+    // Analytics Ingestion, Overview & GA4
     async function ingestEvent(eventType, path) {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
       const slug = sOpt ? sOpt.dataset.slug : 'default';
@@ -956,7 +1067,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
     async function loadAnalyticsMetrics() {
       const wId = document.getElementById('workspaceSelect').value;
       const sId = document.getElementById('siteSelect').value;
-      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/overview/`);
+      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/first-party/overview/`);
       if (res.ok && res.data.summary) {
         document.getElementById('statEvents').textContent = res.data.summary.total_events || 0;
         document.getElementById('statVisitors').textContent = res.data.summary.unique_visitors || 0;
@@ -965,28 +1076,103 @@ CONSOLE_HTML = """<!DOCTYPE html>
       }
     }
 
+    async function checkAnalyticsConfig() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/config/`);
+    }
+
+    async function connectGA4Mock() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/ga4/`, {
+        property_id: 'properties/123456789',
+        measurement_id: 'G-DEMOTEST12',
+        credentials: { client_id: 'demo-client', client_secret: 'demo-secret' }
+      });
+    }
+
+    async function fetchGA4Report() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/analytics/reports/ga4/?start_date=30daysAgo&end_date=today`);
+    }
+
     // Consent Operations
     async function recordConsent(analyticsChoice, marketingChoice) {
       const sOpt = document.getElementById('siteSelect').selectedOptions[0];
-      const slug = sOpt ? sOpt.dataset.slug : 'default';
-      const visitorId = document.getElementById('consentVisitorId').value;
-      const jurisdiction = document.getElementById('consentJurisdiction').value;
+      const slug = (sOpt && sOpt.dataset.slug) ? sOpt.dataset.slug : 'techradar-demo';
+      const visitorId = document.getElementById('consentVisitorId').value || 'vis-test-101';
 
-      await apiCall('POST', `/api/v1/public/sites/${slug}/consent/records/`, {
+      await apiCall('POST', `/api/v1/public/sites/${slug}/consent`, {
         visitor_id: visitorId,
-        jurisdiction_mode: jurisdiction,
-        consent_type: analyticsChoice && marketingChoice ? 'FULL_CONSENT' : (analyticsChoice ? 'ANALYTICS_ONLY' : 'REJECT_ALL'),
-        choices: {
+        categories: {
           analytics: analyticsChoice,
           marketing: marketingChoice
-        }
+        },
+        consent_type: (analyticsChoice && marketingChoice) ? 'OPT_IN' : 'OPT_OUT'
       }, false);
     }
 
-    // GitHub Operations
+    // GitHub Operations & Automation
     async function fetchInstallations() {
       const wId = document.getElementById('workspaceSelect').value;
-      await apiCall('GET', `/api/v1/workspaces/${wId}/github/installations/`);
+      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/github/installations/`);
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        document.getElementById('ghInstallationId').value = res.data[0].installation_id;
+      }
+    }
+
+    async function fetchAccessibleRepos() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const instId = document.getElementById('ghInstallationId').value;
+      if (!instId) { alert('Enter an Installation ID'); return; }
+      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/github/installations/${instId}/repositories/`);
+      const container = document.getElementById('repoListDisplay');
+      if (res.ok && res.data && res.data.repositories) {
+        let html = '<div class="table-container"><table><thead><tr><th>Repository</th><th>Default Branch</th><th>Visibility</th><th>Action</th></tr></thead><tbody>';
+        res.data.repositories.forEach(r => {
+          const repoName = r.full_name || r.name;
+          html += `<tr>
+            <td><strong>${repoName}</strong></td>
+            <td><code>${r.default_branch || 'main'}</code></td>
+            <td><span class="inspector-badge">${r.private ? 'PRIVATE' : 'PUBLIC'}</span></td>
+            <td><button class="btn btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.5rem" onclick="selectRepo('${repoName}')">Select</button></td>
+          </tr>`;
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      }
+    }
+
+    function selectRepo(name) {
+      document.getElementById('ghRepoFullName').value = name;
+      alert('Selected repository: ' + name);
+    }
+
+    async function connectRepoToSite() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      const repoFullName = document.getElementById('ghRepoFullName').value;
+      const baseBranch = document.getElementById('ghBaseBranch').value;
+      const instId = parseInt(document.getElementById('ghInstallationId').value, 10);
+      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/connect/`, {
+        installation_id: instId,
+        repo_full_name: repoFullName,
+        base_branch: baseBranch
+      });
+    }
+
+    async function analyzeConnectedRepo() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/analyze/`);
+    }
+
+    async function openIntegrationPR() {
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/open-pr/`);
     }
 
     // Check existing stored token
