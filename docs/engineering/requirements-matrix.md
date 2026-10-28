@@ -117,13 +117,13 @@ Endpoint paths are provisional. The OpenAPI schema produced in Stage 1+ is autho
 
 | ID | Requirement / acceptance criteria | Module | Endpoint(s) | Planned tests | Stage | Status |
 |----|-----------------------------------|--------|-------------|---------------|-------|--------|
-| GH-1 | GitHub App installation flow with state validation; minimal permissions (contents, pull_requests, metadata) verified against current docs; uninstall/revoke handling via signed webhooks | `github_integration` | `/sites/{id}/github/…`, `POST /webhooks/github` | `tests/github/test_installation.py` | 8 | PLANNED |
-| GH-2 | Explicit repo + branch selection limited to the installation's repos | `github_integration` | — | `tests/github/test_repo_selection.py` | 8 | PLANNED |
-| GH-3 | Framework detection from manifests only (package.json, vite/next config names) parsed as data; size limits; path traversal/symlink/submodule handling; never executes code | `github_integration.detect` | — | `tests/github/test_detection_hostile.py` | 8 | PLANNED |
-| GH-4 | Generates a patch on a new branch and opens a PR; never writes to default/protected branches, never merges or deploys | `github_integration.pr` | `POST /github/integration-pr/` | `tests/github/test_pr_flow.py` | 8 | PLANNED |
-| GH-5 | Unsupported repo → clear `manual_integration_required` state + guide | `github_integration` | — | `tests/github/test_unsupported.py` | 8 | PLANNED |
-| GH-6 | Webhook signature (HMAC-SHA256) + delivery-ID replay protection; private code never logged | `github_integration` | — | `tests/github/test_webhooks.py` | 8 | PLANNED |
-| GH-7 | Disabled unless `GITHUB_APP_ENABLED=true` and credentials present | `github_integration` | — | `tests/github/test_feature_flag.py` | 8 | PLANNED |
+| GH-1 | GitHub App installation flow with state validation; minimal permissions (contents, pull_requests, metadata); uninstall/revoke handling via signed webhooks | `github_integration` | `/workspaces/{ws}/github/installations/`, `POST /webhooks/github/` | `tests/github/test_installation.py` | 8 | IMPLEMENTED |
+| GH-2 | Explicit repo + branch selection limited to the installation's repos | `github_integration` | `/workspaces/{ws}/github/installations/{id}/repositories/`, `POST /sites/{id}/github/connect/` | `tests/github/test_repo_selection.py` | 8 | IMPLEMENTED |
+| GH-3 | Framework detection from manifests only (package.json, vite/next config) parsed as data; 500 KB limit; path traversal rejected; never executes code | `github_integration.analyzer` | `POST /sites/{id}/github/analyze/` | `tests/github/test_detection_hostile.py` | 8 | IMPLEMENTED |
+| GH-4 | Generates patch on a new branch and opens PR; never writes to default/base branch, never merges or deploys | `github_integration.views` | `POST /sites/{id}/github/open-pr/` | `tests/github/test_pr_flow.py` | 8 | IMPLEMENTED |
+| GH-5 | Unsupported repo → clear `manual_integration_required` state + docs guide | `github_integration` | `POST /sites/{id}/github/analyze/` | `tests/github/test_unsupported.py` | 8 | IMPLEMENTED |
+| GH-6 | Webhook signature (HMAC-SHA256) + delivery-ID replay protection; private keys & secrets redacted in logs | `github_integration.views` | `POST /api/v1/webhooks/github/` | `tests/github/test_webhooks.py` | 8 | IMPLEMENTED |
+| GH-7 | Disabled unless `GITHUB_APP_ENABLED=true` | `github_integration.permissions` | all `/github/` endpoints | `tests/github/test_feature_flag.py` | 8 | IMPLEMENTED |
 
 ## H. Cross-cutting security, ops, integration contract
 

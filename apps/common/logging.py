@@ -27,7 +27,7 @@ REDACTED_STR = "[REDACTED]"
 
 # Patterns and keys requiring redaction
 SENSITIVE_KEY_PATTERN = re.compile(
-    r"^(password|secret|token|api_key|authorization|cookie|sessionid|refresh|access_token|key|consent_payload|categories_payload)$",
+    r"^(password|secret|token|api_key|authorization|cookie|sessionid|refresh|access_token|key|consent_payload|categories_payload|.*private_key.*|github_private_key|webhook_secret)$",
     re.IGNORECASE,
 )
 SENSITIVE_HEADER_PATTERN = re.compile(
