@@ -22,12 +22,37 @@ PROFILES = {"dev", "test", "prod"}
 _DEV_ONLY_SECRET_KEY = "dev-only-insecure-secret-key-do-not-use-in-production-0123456789"  # noqa: S105
 
 
+def _load_dotenv(path: Path) -> None:
+    """Load key-value pairs from a .env file into os.environ if not already set."""
+    if not path.is_file():
+        return
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip()
+                    if (val.startswith('"') and val.endswith('"')) or (
+                        val.startswith("'") and val.endswith("'")
+                    ):
+                        val = val[1:-1]
+                    os.environ.setdefault(key, val)
+    except Exception:
+        pass
+
+
 def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, Any]:
     if profile not in PROFILES:
         raise ValueError(f"unknown settings profile: {profile}")
-    env = Env(os.environ if environ is None else environ)
     is_prod = profile == "prod"
     is_test = profile == "test"
+    if environ is None and not is_test:
+        _load_dotenv(BASE_DIR / ".env")
+    env = Env(os.environ if environ is None else environ)
 
     # --- Core -------------------------------------------------------------
     if is_prod:
@@ -40,7 +65,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
 
     allowed_hosts = env.list(
         "DJANGO_ALLOWED_HOSTS",
-        default=[] if is_prod else ["localhost", "127.0.0.1", "testserver"],
+        default=[] if is_prod else ["localhost", "127.0.0.1", "testserver", ".trycloudflare.com"],
     )
     if is_prod and not allowed_hosts:
         env.errors.append("DJANGO_ALLOWED_HOSTS is required in production")
