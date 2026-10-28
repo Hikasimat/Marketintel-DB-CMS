@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -205,6 +206,15 @@ def get_github_client() -> BaseGitHubClient:
     """Factory retrieving configured GitHub client (Live or Mock)."""
     app_id = getattr(settings, "GITHUB_APP_ID", "")
     private_key = getattr(settings, "GITHUB_APP_PRIVATE_KEY", "")
+    if private_key:
+        try:
+            path = Path(private_key)
+            if not path.is_absolute():
+                path = Path(settings.BASE_DIR) / path
+            if path.is_file():
+                private_key = path.read_text(encoding="utf-8")
+        except Exception:
+            pass
     # Default to deterministic mock client unless in live prod with explicit keys
     if (
         getattr(settings, "GITHUB_APP_ENABLED", False)
