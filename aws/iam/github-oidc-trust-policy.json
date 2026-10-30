@@ -9,18 +9,16 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": [
-            "sts.amazonaws.com",
-            "https://github.com/Hikasimat",
-            "https://github.com/Mohanraj02V"
-          ]
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
-            "repo:Hikasimat/*",
-            "repo:hikasimat/*",
-            "repo:Mohanraj02V/*",
-            "repo:mohanraj02v/*"
+            "repo:*Marketintel-DB-CMS*:*",
+            "repo:*marketintel-db-cms*:*",
+            "repo:Hikasimat*:*",
+            "repo:hikasimat*:*",
+            "repo:Mohanraj02V*:*",
+            "repo:mohanraj02v*:*"
           ]
         }
       }
