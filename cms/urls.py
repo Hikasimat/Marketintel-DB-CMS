@@ -24,6 +24,9 @@ urlpatterns = [
     # Health and readiness probes (unauthenticated, exempted from HTTPS redirect)
     path("health/live", LiveCheckView.as_view(), name="health_live"),
     path("health/ready", ReadyCheckView.as_view(), name="health_ready"),
+    path("api/v1/health/", LiveCheckView.as_view(), name="api_health"),
+    path("api/v1/health/live", LiveCheckView.as_view(), name="api_health_live"),
+    path("api/v1/health/ready", ReadyCheckView.as_view(), name="api_health_ready"),
     # OpenAPI v3 schema definition
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     # Core domain API routes
