@@ -110,6 +110,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         )
 
     db_conn_max_age = env.int("POSTGRES_CONN_MAX_AGE", 60, min_value=0, max_value=3600)
+    db_schema = env.str("POSTGRES_SCHEMA", "cms" if is_prod else "public")
     db_sslmode = env.str(
         "POSTGRES_SSLMODE",
         "require" if is_prod else "prefer",
@@ -256,7 +257,11 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
                 "PORT": str(db_port),
                 "CONN_MAX_AGE": 0 if is_test else db_conn_max_age,
                 "CONN_HEALTH_CHECKS": True,
-                "OPTIONS": {"sslmode": db_sslmode, "connect_timeout": 5},
+                "OPTIONS": {
+                    "sslmode": db_sslmode,
+                    "connect_timeout": 5,
+                    **({"options": f"-c search_path={db_schema},public"} if db_schema and db_schema != "public" else {}),
+                },
                 "ATOMIC_REQUESTS": False,
             }
         },
