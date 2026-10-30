@@ -63,7 +63,6 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         _load_dotenv(Path("/app/.env"))
     env = Env(os.environ if environ is None else environ)
 
-
     # --- Core -------------------------------------------------------------
     if is_prod:
         secret_key = env.str("DJANGO_SECRET_KEY", min_length=50)
@@ -89,7 +88,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
             if container_ip not in allowed_hosts:
                 allowed_hosts.append(container_ip)
             allowed_hosts.extend([".compute.internal", ".elb.amazonaws.com"])
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     public_base_url = env.str(
@@ -270,7 +269,11 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
                 "OPTIONS": {
                     "sslmode": db_sslmode,
                     "connect_timeout": 5,
-                    **({"options": f"-c search_path={db_schema},public"} if db_schema and db_schema != "public" else {}),
+                    **(
+                        {"options": f"-c search_path={db_schema},public"}
+                        if db_schema and db_schema != "public"
+                        else {}
+                    ),
                 },
                 "ATOMIC_REQUESTS": False,
             }

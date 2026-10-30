@@ -17,6 +17,13 @@ from apps.accounts.models import User
 logger = logging.getLogger("cms.auth")
 
 
+_BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
 def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[str, Any] | None:
     """Verify credentials against Market Intel DB project login endpoints.
 
@@ -54,10 +61,7 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                    ),
+                    "User-Agent": _BROWSER_USER_AGENT,
                 },
                 method="POST",
             )
@@ -78,10 +82,7 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
                                 me_endpoint,
                                 headers={
                                     "Authorization": f"Bearer {access_token}",
-                                    "User-Agent": (
-                                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                                    ),
+                                    "User-Agent": _BROWSER_USER_AGENT,
                                 },
                                 method="GET",
                             )
@@ -192,9 +193,7 @@ class LoginSerializer(serializers.Serializer[Any]):
                     WorkspaceRole.OWNER
                     if is_super
                     else (
-                        WorkspaceRole.ADMIN
-                        if role in ("ADM", "MANAGER")
-                        else WorkspaceRole.EDITOR
+                        WorkspaceRole.ADMIN if role in ("ADM", "MANAGER") else WorkspaceRole.EDITOR
                     )
                 )
                 membership, created = WorkspaceMembership.objects.get_or_create(
