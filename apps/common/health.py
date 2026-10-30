@@ -20,6 +20,7 @@ class LiveCheckView(APIView):
 
     permission_classes = (permissions.AllowAny,)
     authentication_classes = ()
+    throttle_classes = ()
 
     def get(self, request, *args, **kwargs) -> Response:
         return Response({"status": "live"}, status=status.HTTP_200_OK)
@@ -31,6 +32,7 @@ class ReadyCheckView(APIView):
 
     permission_classes = (permissions.AllowAny,)
     authentication_classes = ()
+    throttle_classes = ()
 
     def get(self, request, *args, **kwargs) -> Response:
         errors: list[str] = []

@@ -207,7 +207,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "apps.common.middleware.AccessLogMiddleware",
     ]
 
-    if redis_url and not is_test:
+    if redis_url and "localhost" not in redis_url and "127.0.0.1" not in redis_url and not is_test:
         caches: dict[str, Any] = {
             "default": {
                 "BACKEND": "django.core.cache.backends.redis.RedisCache",
