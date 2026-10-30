@@ -36,9 +36,9 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
         endpoints.append(raw_env_url.strip())
     endpoints.extend(
         [
+            "https://marketintel.hikasimat.com/api/auth/login/",
             "http://127.0.0.1:8000/api/auth/login/",
             "http://localhost:8000/api/auth/login/",
-            "https://marketinteldbapp.hikasimat.com/api/auth/login/",
         ]
     )
 
@@ -54,11 +54,14 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": "CMS-MarketIntel-Auth/1.0",
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                    ),
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=4) as response:  # nosec B310 # noqa: S310
+            with urllib.request.urlopen(req, timeout=5) as response:  # nosec B310 # noqa: S310
                 if response.status == 200:
                     resp_data = json.loads(response.read().decode())
                     access_token = resp_data.get("access")
@@ -75,11 +78,14 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
                                 me_endpoint,
                                 headers={
                                     "Authorization": f"Bearer {access_token}",
-                                    "User-Agent": "CMS-MarketIntel-Auth/1.0",
+                                    "User-Agent": (
+                                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                                    ),
                                 },
                                 method="GET",
                             )
-                            with urllib.request.urlopen(me_req, timeout=3) as me_resp:  # nosec B310 # noqa: S310
+                            with urllib.request.urlopen(me_req, timeout=4) as me_resp:  # nosec B310 # noqa: S310
                                 if me_resp.status == 200:
                                     me_data = json.loads(me_resp.read().decode())
                         except Exception as exc:
@@ -103,6 +109,46 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
     return None
 
 
+def _verify_with_market_intel_database(identifier: str, password: str) -> dict[str, Any] | None:
+    """Verify credentials directly against public.auth_user in shared PostgreSQL database."""
+    from django.conf import settings
+    from django.contrib.auth.hashers import check_password
+    from django.db import connection
+
+    if getattr(settings, "SETTINGS_PROFILE", "") == "test" or os.getenv(
+        "DJANGO_SETTINGS_MODULE", ""
+    ).endswith(".test"):
+        return None
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, username, email, password, is_active, is_superuser, is_staff "
+                "FROM public.auth_user "
+                "WHERE LOWER(email) = LOWER(%s) OR LOWER(username) = LOWER(%s) "
+                "LIMIT 1;",
+                [identifier, identifier],
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            _, username, email, hashed_password, is_active, is_superuser, is_staff = row
+            if not is_active:
+                return None
+            if check_password(password, hashed_password):
+                logger.info("Market Intel DB authenticated user via direct DB: %s", identifier)
+                return {
+                    "email": email or identifier,
+                    "username": username or identifier,
+                    "role": "ADM" if is_superuser else "PRE",
+                    "is_superuser": bool(is_superuser),
+                    "is_staff": bool(is_staff),
+                }
+    except Exception as exc:
+        logger.debug("Database auth fallback skipped: %s", exc)
+    return None
+
+
 class LoginSerializer(serializers.Serializer[Any]):
     email = serializers.CharField()
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
@@ -112,8 +158,13 @@ class LoginSerializer(serializers.Serializer[Any]):
         email = identifier.lower() if "@" in identifier else identifier
         password = attrs.get("password", "")
 
-        # 1. Primary authentication via Market Intel DB authentication endpoint
+        # 1. Primary authentication via Market Intel DB HTTP endpoint
         market_intel_user = _verify_with_market_intel_endpoint(identifier, password)
+
+        # 1.5 Fallback to shared PostgreSQL database authentication
+        if not market_intel_user:
+            market_intel_user = _verify_with_market_intel_database(identifier, password)
+
         if market_intel_user:
             resolved_email = (market_intel_user.get("email") or email).lower().strip()
             is_super = market_intel_user.get("is_superuser", False)
@@ -134,24 +185,26 @@ class LoginSerializer(serializers.Serializer[Any]):
                 from apps.tenancy.models import Workspace, WorkspaceMembership, WorkspaceRole
 
                 workspace = Workspace.objects.first()
-                if workspace:
-                    assigned_role = (
-                        WorkspaceRole.OWNER
-                        if is_super
-                        else (
-                            WorkspaceRole.ADMIN
-                            if role in ("ADM", "MANAGER")
-                            else WorkspaceRole.EDITOR
-                        )
+                if not workspace:
+                    workspace = Workspace.objects.create(name="Default Workspace", slug="default")
+
+                assigned_role = (
+                    WorkspaceRole.OWNER
+                    if is_super
+                    else (
+                        WorkspaceRole.ADMIN
+                        if role in ("ADM", "MANAGER")
+                        else WorkspaceRole.EDITOR
                     )
-                    membership, created = WorkspaceMembership.objects.get_or_create(
-                        workspace=workspace,
-                        user=user,
-                        defaults={"role": assigned_role},
-                    )
-                    if not created and membership.role != assigned_role and is_super:
-                        membership.role = WorkspaceRole.OWNER
-                        membership.save(update_fields=["role"])
+                )
+                membership, created = WorkspaceMembership.objects.get_or_create(
+                    workspace=workspace,
+                    user=user,
+                    defaults={"role": assigned_role},
+                )
+                if not created and membership.role != assigned_role and is_super:
+                    membership.role = WorkspaceRole.OWNER
+                    membership.save(update_fields=["role"])
             except Exception as e:
                 logger.warning("Could not link user to workspace: %s", e)
 

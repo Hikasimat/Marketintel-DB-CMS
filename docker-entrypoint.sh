@@ -1,7 +1,16 @@
 #!/bin/sh
 set -e
+# Ingest single SSM parameter APP_ENV_CONFIG if provided
+if [ -n "$APP_ENV_CONFIG" ]; then
+    echo "[Entrypoint] Ingesting APP_ENV_CONFIG into /app/.env..."
+    printf "%s\n" "$APP_ENV_CONFIG" > /app/.env
+    chmod 600 /app/.env 2>/dev/null || true
+    set -a
+    . /app/.env
+    set +a
+fi
 
-# Run database migrations if AUTO_MIGRATE is enabled or default to true on boot
+
 if [ "${AUTO_MIGRATE:-true}" = "true" ] || [ "${AUTO_MIGRATE:-true}" = "1" ]; then
     echo "[Entrypoint] Running database migrations..."
     python manage.py migrate --noinput || echo "[Entrypoint] Warning: Database migration failed, continuing boot..."

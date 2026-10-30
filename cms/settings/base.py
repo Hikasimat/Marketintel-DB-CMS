@@ -22,25 +22,30 @@ PROFILES = {"dev", "test", "prod"}
 _DEV_ONLY_SECRET_KEY = "dev-only-insecure-secret-key-do-not-use-in-production-0123456789"  # noqa: S105
 
 
+def _load_env_string(content: str) -> None:
+    """Load key-value pairs from an env-formatted string into os.environ."""
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            key, val = line.split("=", 1)
+            key = key.strip()
+            val = val.strip()
+            if (val.startswith('"') and val.endswith('"')) or (
+                val.startswith("'") and val.endswith("'")
+            ):
+                val = val[1:-1]
+            os.environ.setdefault(key, val)
+
+
 def _load_dotenv(path: Path) -> None:
     """Load key-value pairs from a .env file into os.environ if not already set."""
     if not path.is_file():
         return
     try:
         with path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    key = key.strip()
-                    val = val.strip()
-                    if (val.startswith('"') and val.endswith('"')) or (
-                        val.startswith("'") and val.endswith("'")
-                    ):
-                        val = val[1:-1]
-                    os.environ.setdefault(key, val)
+            _load_env_string(f.read())
     except (OSError, UnicodeDecodeError):
         pass
 
@@ -51,8 +56,13 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
     is_prod = profile == "prod"
     is_test = profile == "test"
     if environ is None and not is_test:
+        app_env_config = os.environ.get("APP_ENV_CONFIG")
+        if app_env_config:
+            _load_env_string(app_env_config)
         _load_dotenv(BASE_DIR / ".env")
+        _load_dotenv(Path("/app/.env"))
     env = Env(os.environ if environ is None else environ)
+
 
     # --- Core -------------------------------------------------------------
     if is_prod:
