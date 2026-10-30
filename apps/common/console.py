@@ -434,9 +434,6 @@ CONSOLE_HTML = """<!DOCTYPE html>
       <button class="nav-btn" onclick="switchTab('consent')">
         <span class="icon">🛡️</span> Consent Manager
       </button>
-      <button class="nav-btn" onclick="switchTab('github')">
-        <span class="icon">🐙</span> GitHub Integration
-      </button>
     </nav>
 
     <!-- Main Content Area -->
@@ -451,7 +448,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Email</label>
-              <input type="email" id="authEmail" value="admin@cms.local">
+              <input type="email" id="authEmail" value="meynix.official@gmail.com">
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
@@ -563,6 +560,28 @@ CONSOLE_HTML = """<!DOCTYPE html>
                 <tr><td colspan="4" style="text-align:center; color:var(--text-dim)">Click "List Workspace Articles" to fetch.</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Pipeline Flow Inspector Card -->
+        <div class="card" id="pipelineInspectorCard" style="display:none; margin-top:1.5rem; border:1px solid rgba(99, 102, 241, 0.5); background:rgba(15, 23, 42, 0.95); box-shadow:0 8px 30px rgba(99, 102, 241, 0.15);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem; border-bottom:1px solid var(--border); padding-bottom:1rem; flex-wrap:wrap; gap:0.75rem;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.25rem;">
+                <h3 class="card-title" style="margin:0; font-size:1.15rem;">⚡ Article Publishing Pipeline Inspector</h3>
+                <span id="pipelineOverallBadge" class="badge" style="font-size:0.8rem; font-weight:700;">CHECKING</span>
+              </div>
+              <p class="card-desc" id="pipelineArticleMeta" style="margin:0; font-family:var(--font-mono); font-size:0.8rem; color:var(--text-muted);"></p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-secondary" style="padding:0.35rem 0.8rem; font-size:0.75rem;" onclick="refreshCurrentPipelineFlow()">↻ Re-check Pipeline</button>
+              <button class="btn btn-secondary" style="padding:0.35rem 0.8rem; font-size:0.75rem;" onclick="closePipelineInspector()">✕ Close Inspector</button>
+            </div>
+          </div>
+
+          <!-- Step Progression Grid / Container -->
+          <div id="pipelineStepsContainer" style="display:grid; gap:0.85rem;">
+            <!-- Dynamically populated steps -->
           </div>
         </div>
       </section>
@@ -682,71 +701,6 @@ CONSOLE_HTML = """<!DOCTYPE html>
         </div>
       </section>
 
-      <!-- TAB 7: GITHUB INTEGRATION -->
-      <section id="tab-github" class="tab-content">
-        <div class="card">
-          <h2 class="card-title">🐙 GitHub App Integration Status</h2>
-          <p class="card-desc">Authorized GitHub App, repository inspection, framework detection, and non-destructive PR generation.</p>
-
-          <div class="stats-row">
-            <div class="stat-card">
-              <div class="stat-val" style="color:var(--accent-emerald)">ACTIVE</div>
-              <div class="stat-label">App Status</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-val" style="color:var(--accent-cyan)">5509577</div>
-              <div class="stat-label">App ID</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-val" style="color:var(--accent-emerald)">LOADED</div>
-              <div class="stat-label">RSA Private Key</div>
-            </div>
-          </div>
-
-          <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.5rem">
-            <a href="https://github.com/apps/cms-integration" target="_blank" class="btn btn-secondary" style="text-decoration:none">
-              Open App on GitHub (Install / Manage) ↗
-            </a>
-            <button class="btn btn-secondary" onclick="fetchInstallations()">List Authorized Installations</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">📂 Inspect Accessible Repositories</h3>
-          <p class="card-desc">Query repositories granted to your GitHub App installation.</p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Installation ID</label>
-              <input type="number" id="ghInstallationId" value="12345" placeholder="e.g. 12345 or from installations list">
-            </div>
-          </div>
-          <div style="display:flex; gap:0.75rem">
-            <button class="btn btn-primary" onclick="fetchAccessibleRepos()">Fetch Accessible Repositories</button>
-          </div>
-          <div id="repoListDisplay" style="margin-top:1rem"></div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">🔗 Connect Repository & Run Automation</h3>
-          <p class="card-desc">Link a repository to active site, detect framework (Next.js/Vite/Astro), and create integration PR.</p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Repository Full Name</label>
-              <input type="text" id="ghRepoFullName" value="acme-corp/nextjs-frontend" placeholder="owner/repo">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Base Branch</label>
-              <input type="text" id="ghBaseBranch" value="main">
-            </div>
-          </div>
-          <div style="display:flex; flex-wrap:wrap; gap:0.75rem">
-            <button class="btn btn-secondary" onclick="connectRepoToSite()">Connect Repo to Site</button>
-            <button class="btn btn-secondary" onclick="analyzeConnectedRepo()">Detect Framework</button>
-            <button class="btn btn-success" onclick="openIntegrationPR()">Open Integration PR</button>
-          </div>
-        </div>
-      </section>
-
     </main>
 
     <!-- Right-Hand Realtime API Inspector Drawer -->
@@ -832,9 +786,9 @@ CONSOLE_HTML = """<!DOCTYPE html>
           data = text;
         }
 
-        // Automatic transparent token refresh on token_expired
-        if (res.status === 401 && requireAuth && data && data.error && data.error.code === 'token_expired') {
-          const email = document.getElementById('authEmail')?.value || 'admin@cms.local';
+        // Automatic transparent token refresh on 401
+        if (res.status === 401 && requireAuth) {
+          const email = document.getElementById('authEmail')?.value || 'meynix.official@gmail.com';
           const password = document.getElementById('authPassword')?.value || 'AdminPassword123!';
           const reloginRes = await fetch('/api/v1/auth/login/', {
             method: 'POST',
@@ -847,6 +801,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
               authToken = reloginData.access;
               localStorage.setItem('cms_jwt_token', authToken);
               document.getElementById('tokenDisplay').textContent = authToken;
+              document.getElementById('headerUserEmail').textContent = email;
               headers['Authorization'] = `Bearer ${authToken}`;
               res = await fetch(path, options);
               const retryText = await res.text();
@@ -895,24 +850,32 @@ CONSOLE_HTML = """<!DOCTYPE html>
 
     // Auth Operations
     async function login(silent = false) {
-      const email = document.getElementById('authEmail').value;
-      const password = document.getElementById('authPassword').value;
+      const email = document.getElementById('authEmail')?.value || 'meynix.official@gmail.com';
+      const password = document.getElementById('authPassword')?.value || 'AdminPassword123!';
       const res = await apiCall('POST', '/api/v1/auth/login/', { email, password }, false);
-      if (res.ok && res.data.access) {
+      if (res.ok && res.data && res.data.access) {
         authToken = res.data.access;
         localStorage.setItem('cms_jwt_token', authToken);
         document.getElementById('tokenDisplay').textContent = authToken;
         document.getElementById('headerUserEmail').textContent = email;
         await loadWorkspaces();
-      } else if (!silent) {
-        alert('Login failed: ' + JSON.stringify(res.data));
+        return true;
+      } else {
+        if (!silent) {
+          alert('Login failed: ' + JSON.stringify(res.data));
+        }
+        return false;
       }
     }
 
     async function fetchMe() {
       const res = await apiCall('GET', '/api/v1/auth/me/');
-      if (res.ok) {
-        document.getElementById('headerUserEmail').textContent = res.data.email || 'User';
+      if (res.ok && res.data) {
+        document.getElementById('headerUserEmail').textContent = res.data.email || 'meynix.official@gmail.com';
+        return true;
+      } else {
+        document.getElementById('headerUserEmail').textContent = 'Not Logged In';
+        return false;
       }
     }
 
@@ -931,51 +894,94 @@ CONSOLE_HTML = """<!DOCTYPE html>
 
     // Tenancy Operations
     async function loadWorkspaces() {
-      const res = await apiCall('GET', '/api/v1/workspaces/');
       const select = document.getElementById('workspaceSelect');
+      if (!authToken) {
+        await login(true);
+      }
+      select.innerHTML = '<option value="">Loading workspaces...</option>';
+      const res = await apiCall('GET', '/api/v1/workspaces/');
       select.innerHTML = '';
       const items = Array.isArray(res.data) ? res.data : (res.data && res.data.results ? res.data.results : []);
       if (res.ok && items.length > 0) {
         currentWorkspaces = items;
-        items.forEach(w => {
+        items.forEach((w, idx) => {
           const opt = document.createElement('option');
           opt.value = w.id;
           opt.textContent = `${w.name} (${w.slug})`;
+          if (idx === 0) opt.selected = true;
           select.appendChild(opt);
         });
-        loadSites();
+        await loadSites();
+      } else {
+        select.innerHTML = '<option value="">No workspace found. Please Login.</option>';
       }
     }
 
     async function loadSites() {
       const wId = document.getElementById('workspaceSelect').value;
-      if (!wId) return;
-      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/`);
       const select = document.getElementById('siteSelect');
+      if (!wId || wId === 'Loading...' || wId === 'Logging in...') {
+        select.innerHTML = '<option value="">No workspace selected</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">Loading sites...</option>';
+      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/`);
       select.innerHTML = '';
       const items = Array.isArray(res.data) ? res.data : (res.data && res.data.results ? res.data.results : []);
       if (res.ok && items.length > 0) {
         currentSites = items;
-        items.forEach(s => {
+        items.forEach((s, idx) => {
           const opt = document.createElement('option');
           opt.value = s.id;
           opt.dataset.slug = s.slug;
           opt.textContent = `${s.name} (${s.slug})`;
+          if (idx === 0) opt.selected = true;
           select.appendChild(opt);
         });
-        loadArticles();
+        await loadArticles();
+      } else {
+        select.innerHTML = '<option value="">No sites found</option>';
       }
     }
 
     async function createSite() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const name = document.getElementById('newSiteName').value;
-      const slug = document.getElementById('newSiteSlug').value;
-      const locale = document.getElementById('newSiteLocale').value;
+      let wId = document.getElementById('workspaceSelect').value;
+      if (!wId || wId === 'Loading...' || wId === 'Logging in...') {
+        await loadWorkspaces();
+        wId = document.getElementById('workspaceSelect').value;
+      }
+      if (!wId || wId === 'Loading...' || wId === 'Logging in...') {
+        alert('Please wait for workspaces to load, or click Login in the "Auth & JWT" tab first.');
+        return;
+      }
+      let name = document.getElementById('newSiteName').value.trim();
+      let slug = document.getElementById('newSiteSlug').value.trim();
+      let locale = document.getElementById('newSiteLocale').value.trim() || 'en-US';
+
+      if (!name) {
+        alert('Please enter a site name.');
+        return;
+      }
+      if (!slug) {
+        slug = name.toLowerCase().replace(/^https?:\/\//i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      } else {
+        slug = slug.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
+      }
+
       const res = await apiCall('POST', `/api/v1/workspaces/${wId}/sites/`, { name, slug, default_locale: locale });
       if (res.ok) {
-        alert('Site created successfully!');
-        loadSites();
+        alert(`Site "${name}" created successfully!`);
+        // If the name is a hostname or URL, auto-register it as a domain for this new site:
+        if (name.includes('.') && res.data && res.data.id) {
+          const cleanHost = name.replace(/^https?:\/\//i, '').split('/')[0];
+          await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${res.data.id}/domains/`, {
+            hostname: cleanHost,
+            is_primary: true
+          });
+        }
+        await loadSites();
+      } else {
+        alert('Failed to create site: ' + (res.data && res.data.error ? res.data.error.message : JSON.stringify(res.data)));
       }
     }
 
@@ -991,10 +997,15 @@ CONSOLE_HTML = """<!DOCTYPE html>
         title, slug, body, status: 'DRAFT'
       });
       if (res.ok) {
-        alert('Article created in DRAFT state!');
-        loadArticles();
+        await loadArticles();
+        if (res.data && res.data.id) {
+          await inspectArticlePipeline(res.data.id, title);
+        }
       }
     }
+
+    let currentPipelineArticleId = null;
+    let currentPipelineArticleTitle = '';
 
     async function loadArticles() {
       const wId = document.getElementById('workspaceSelect').value;
@@ -1016,30 +1027,180 @@ CONSOLE_HTML = """<!DOCTYPE html>
             ? 'background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);'
             : 'background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);';
           const badgeText = isPublished ? '🟢 LIVE PUBLISHED' : '🟡 DRAFT (Private)';
-          const actionBtn = isPublished
-            ? `<button class="btn btn-secondary" style="font-size:0.75rem; padding:0.28rem 0.65rem;" onclick="publishArticle('${art.id}')">Re-Publish</button>`
-            : `<button class="btn btn-success" style="font-size:0.75rem; padding:0.28rem 0.75rem; font-weight:700;" onclick="publishArticle('${art.id}')">🚀 Publish to Site</button>`;
+          const safeTitle = (art.title || 'Untitled').replace(/'/g, "");
+          const publishBtn = isPublished
+            ? `<button class="btn btn-secondary" style="font-size:0.75rem; padding:0.28rem 0.65rem;" onclick="publishArticle('${art.id}', '${safeTitle}')">Re-Publish</button>`
+            : `<button class="btn btn-success" style="font-size:0.75rem; padding:0.28rem 0.75rem; font-weight:700;" onclick="publishArticle('${art.id}', '${safeTitle}')">🚀 Publish to Site</button>`;
+          const inspectBtn = `<button class="btn btn-secondary" style="font-size:0.75rem; padding:0.28rem 0.65rem; color:#818cf8; border-color:rgba(99,102,241,0.4);" onclick="inspectArticlePipeline('${art.id}', '${safeTitle}')">⚡ Inspect Flow</button>`;
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><strong>${art.title}</strong></td>
             <td><code>${art.slug}</code></td>
             <td><span style="${badgeStyle} padding:3px 8px; border-radius:4px; font-weight:600; font-size:0.75rem;">${badgeText}</span></td>
-            <td>${actionBtn}</td>
+            <td><div style="display:flex; gap:0.4rem; flex-wrap:wrap;">${publishBtn} ${inspectBtn}</div></td>
           `;
           tbody.appendChild(tr);
         });
       }
     }
 
-    async function publishArticle(artId) {
+    async function publishArticle(artId, artTitle = 'Article') {
       const wId = document.getElementById('workspaceSelect').value;
       const sId = document.getElementById('siteSelect').value;
       const res = await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/articles/${artId}/publish/`);
       if (res.ok) {
-        alert('Article published! Live snapshot created and instantly viewable on public frontend.');
-        loadArticles();
+        await loadArticles();
+        await inspectArticlePipeline(artId, artTitle);
+      } else {
+        alert('Failed to publish article: ' + (res.data && res.data.error ? res.data.error.message : JSON.stringify(res.data)));
       }
+    }
+
+    async function inspectArticlePipeline(artId, artTitle = '') {
+      currentPipelineArticleId = artId;
+      currentPipelineArticleTitle = artTitle;
+      const wId = document.getElementById('workspaceSelect').value;
+      const sId = document.getElementById('siteSelect').value;
+      const card = document.getElementById('pipelineInspectorCard');
+      const badge = document.getElementById('pipelineOverallBadge');
+      const meta = document.getElementById('pipelineArticleMeta');
+      const container = document.getElementById('pipelineStepsContainer');
+
+      card.style.display = 'block';
+      badge.textContent = 'CHECKING...';
+      badge.style.background = 'rgba(99,102,241,0.2)';
+      badge.style.color = '#a5b4fc';
+      meta.textContent = `Article ID: ${artId} | Title: "${artTitle}"`;
+      container.innerHTML = '<div style="color:var(--text-dim); padding:1rem; text-align:center;">Analyzing publishing flow across all 7 pipeline steps...</div>';
+      card.scrollIntoView({ behavior: 'smooth' });
+
+      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/sites/${sId}/articles/${artId}/pipeline-flow/`);
+      if (!res.ok) {
+        badge.textContent = 'ERROR';
+        badge.style.background = 'rgba(239,68,68,0.2)';
+        badge.style.color = '#f87171';
+        container.innerHTML = `<div style="color:#f87171; padding:1rem;">Failed to fetch pipeline diagnostics: ${JSON.stringify(res.data)}</div>`;
+        return;
+      }
+
+      const flow = res.data;
+      const overall = flow.overall_status || 'UNKNOWN';
+      if (overall === 'SUCCESS') {
+        badge.textContent = '✔ ALL SYSTEMS HEALTHY (SUCCESS)';
+        badge.style.background = 'rgba(16,185,129,0.2)';
+        badge.style.color = '#34d399';
+        badge.style.border = '1px solid rgba(16,185,129,0.4)';
+      } else if (overall === 'WARNING') {
+        badge.textContent = '⚠ WARNING / IN-FLIGHT';
+        badge.style.background = 'rgba(245,158,11,0.2)';
+        badge.style.color = '#fbbf24';
+        badge.style.border = '1px solid rgba(245,158,11,0.4)';
+      } else {
+        badge.textContent = '✖ PIPELINE ERRORS DETECTED';
+        badge.style.background = 'rgba(239,68,68,0.2)';
+        badge.style.color = '#f87171';
+        badge.style.border = '1px solid rgba(239,68,68,0.4)';
+      }
+
+      meta.textContent = `Article: "${flow.article.title}" (${flow.article.slug}) | Status: ${flow.article.status} | Site: ${flow.article.site_name} (${flow.article.site_slug})`;
+
+      container.innerHTML = '';
+      flow.steps.forEach(step => {
+        const stepDiv = document.createElement('div');
+        stepDiv.style.padding = '0.9rem';
+        stepDiv.style.borderRadius = '8px';
+        stepDiv.style.border = '1px solid var(--border)';
+        stepDiv.style.background = 'rgba(255,255,255,0.02)';
+
+        let statusBadge = '';
+        if (step.status === 'PASSED') {
+          statusBadge = '<span style="background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">✔ PASSED</span>';
+        } else if (step.status === 'PENDING') {
+          statusBadge = '<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">⏳ PENDING</span>';
+        } else if (step.status === 'WARNING') {
+          statusBadge = '<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">⚠ WARNING</span>';
+        } else if (step.status === 'FAILED') {
+          statusBadge = '<span style="background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">✖ FAILED</span>';
+          stepDiv.style.borderColor = 'rgba(239,68,68,0.4)';
+          stepDiv.style.background = 'rgba(239,68,68,0.05)';
+        } else {
+          statusBadge = `<span style="background:rgba(148,163,184,0.18); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); padding:2px 8px; border-radius:4px; font-weight:600; font-size:0.72rem;">ℹ ${step.status}</span>`;
+        }
+
+        let errorCallout = '';
+        if (step.error) {
+          errorCallout = `
+            <div style="margin-top:0.6rem; padding:0.6rem 0.8rem; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); border-radius:6px; color:#fca5a5; font-size:0.8rem;">
+              <strong>Error Message:</strong> ${step.error}
+            </div>
+          `;
+        }
+
+        let logsHtml = '';
+        if (step.logs && step.logs.length > 0) {
+          logsHtml = `
+            <div style="margin-top:0.75rem; overflow-x:auto;">
+              <table style="font-size:0.75rem; margin:0;">
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Status</th>
+                    <th>HTTP Code</th>
+                    <th>Response Body / Error</th>
+                    <th>Submitted Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${step.logs.map(l => `
+                    <tr>
+                      <td><strong>${l.provider}</strong></td>
+                      <td><span style="color:${l.status === 'FAILED' ? '#f87171' : (l.status === 'SUBMITTED' || l.status === 'SUCCESS' ? '#34d399' : '#fbbf24')}">${l.status}</span></td>
+                      <td><code>${l.response_code || 'N/A'}</code></td>
+                      <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.response_body || 'None'}</td>
+                      <td>${new Date(l.created_at).toLocaleTimeString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        let eventsHtml = '';
+        if (step.events && step.events.length > 0) {
+          eventsHtml = `
+            <div style="margin-top:0.6rem; font-size:0.75rem; color:var(--text-muted); display:flex; flex-direction:column; gap:0.25rem;">
+              ${step.events.map(e => `
+                <div>• <strong>${e.action}</strong> by <code>${e.actor}</code> at ${new Date(e.timestamp).toLocaleTimeString()}</div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        stepDiv.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+            <strong style="font-size:0.9rem; color:var(--text);">${step.title}</strong>
+            ${statusBadge}
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.4;">${step.details}</div>
+          ${errorCallout}
+          ${logsHtml}
+          ${eventsHtml}
+        `;
+        container.appendChild(stepDiv);
+      });
+    }
+
+    async function refreshCurrentPipelineFlow() {
+      if (currentPipelineArticleId) {
+        await inspectArticlePipeline(currentPipelineArticleId, currentPipelineArticleTitle);
+      }
+    }
+
+    function closePipelineInspector() {
+      const card = document.getElementById('pipelineInspectorCard');
+      if (card) card.style.display = 'none';
     }
 
     async function viewPublicDelivery() {
@@ -1171,92 +1332,24 @@ CONSOLE_HTML = """<!DOCTYPE html>
       }, false);
     }
 
-    // GitHub Operations & Automation
-    async function fetchInstallations() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/github/installations/`);
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
-        document.getElementById('ghInstallationId').value = res.data[0].installation_id;
-      }
-    }
-
-    async function fetchAccessibleRepos() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const instId = document.getElementById('ghInstallationId').value;
-      if (!instId) { alert('Enter an Installation ID'); return; }
-      const res = await apiCall('GET', `/api/v1/workspaces/${wId}/github/installations/${instId}/repositories/`);
-      const container = document.getElementById('repoListDisplay');
-      if (res.ok && res.data && res.data.repositories) {
-        let html = '<div class="table-container"><table><thead><tr><th>Repository</th><th>Default Branch</th><th>Visibility</th><th>Action</th></tr></thead><tbody>';
-        res.data.repositories.forEach(r => {
-          const repoName = r.full_name || r.name;
-          html += `<tr>
-            <td><strong>${repoName}</strong></td>
-            <td><code>${r.default_branch || 'main'}</code></td>
-            <td><span class="inspector-badge">${r.private ? 'PRIVATE' : 'PUBLIC'}</span></td>
-            <td><button class="btn btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.5rem" onclick="selectRepo('${repoName}')">Select</button></td>
-          </tr>`;
-        });
-        html += '</tbody></table></div>';
-        container.innerHTML = html;
-      }
-    }
-
-    function selectRepo(name) {
-      document.getElementById('ghRepoFullName').value = name;
-      alert('Selected repository: ' + name);
-    }
-
-    async function connectRepoToSite() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const sId = document.getElementById('siteSelect').value;
-      const repoFullName = document.getElementById('ghRepoFullName').value;
-      const baseBranch = document.getElementById('ghBaseBranch').value;
-      const instId = parseInt(document.getElementById('ghInstallationId').value, 10);
-      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/connect/`, {
-        installation_id: instId,
-        repo_full_name: repoFullName,
-        base_branch: baseBranch
-      });
-    }
-
-    async function analyzeConnectedRepo() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const sId = document.getElementById('siteSelect').value;
-      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/analyze/`);
-    }
-
-    async function openIntegrationPR() {
-      const wId = document.getElementById('workspaceSelect').value;
-      const sId = document.getElementById('siteSelect').value;
-      await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${sId}/github/open-pr/`);
-    }
-
     // Establish session on load: reuse stored token, otherwise auto-login with the prefilled demo credentials
-    let sessionReady;
-    if (authToken) {
-      document.getElementById('tokenDisplay').textContent = authToken;
-      sessionReady = fetchMe().then(() => loadWorkspaces());
-    } else {
-      sessionReady = login(true);
-    }
-
-    // Auto-detect GitHub App Installation callback from query params
-    const urlParams = new URLSearchParams(window.location.search);
-    const instParam = urlParams.get('installation_id');
-    if (instParam) {
-      const input = document.getElementById('ghInstallationId');
-      if (input) input.value = instParam;
-      if (urlParams.get('installed')) {
-        sessionReady.then(() => {
-          document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-          document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-          document.getElementById('tab-github')?.classList.add('active');
-          alert('GitHub App successfully installed! Installation ID ' + instParam + ' registered.');
-          fetchAccessibleRepos();
-        });
+    let sessionReady = (async () => {
+      try {
+        if (authToken) {
+          document.getElementById('tokenDisplay').textContent = authToken;
+          const ok = await fetchMe();
+          if (!ok) {
+            await login(true);
+          } else {
+            await loadWorkspaces();
+          }
+        } else {
+          await login(true);
+        }
+      } catch (e) {
+        console.warn('Session initialization:', e);
       }
-    }
+    })();
   </script>
 </body>
 </html>

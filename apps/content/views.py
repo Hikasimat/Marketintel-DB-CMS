@@ -469,3 +469,295 @@ class PublicArticleDetailView(APIView):
         response["ETag"] = f'"{etag}"'
         response["Cache-Control"] = "public, max-age=60"
         return response
+
+
+def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: bool = False) -> dict:
+    """Evaluate and compile the 7-step publishing pipeline diagnostics for an article."""
+    # Step 1: Content & Slug Validation
+    slug_valid = bool(article.slug and not any(c in article.slug for c in " /\\?#@!"))
+    word_count = len(article.body.split()) if article.body else 0
+    step1_status = "PASSED" if (slug_valid and article.title) else "FAILED"
+    step1_details = (
+        f"Slug '{article.slug}' is valid. Title length: {len(article.title)} characters. "
+        f"Body word count: {word_count} words."
+    )
+    step1_error = None if slug_valid else "Slug contains invalid characters."
+
+    # Step 2: Version Snapshots & Revision History
+    versions = list(ArticleVersion.objects.filter(article=article).order_by("-version_number"))
+    latest_ver = versions[0] if versions else None
+    author_email = (
+        latest_ver.created_by.email
+        if (latest_ver and latest_ver.created_by)
+        else "admin@cms.local"
+    )
+    if redact_sensitive and "@" in author_email:
+        name_part, domain_part = author_email.split("@", 1)
+        author_email = f"{name_part[:2]}***@{domain_part}"
+
+    step2_status = "PASSED" if versions else "WARNING"
+    step2_details = (
+        f"Total revisions: {len(versions)}. Active snapshot version: #{latest_ver.version_number if latest_ver else 1} "
+        f"(authored by {author_email})."
+    )
+
+    # Step 3: Domain & Canonical Resolution
+    primary_domain = (
+        site.domains.filter(is_verified=True, is_primary=True).first()
+        or site.domains.filter(is_verified=True).first()
+    )
+    if primary_domain:
+        domain_url = f"https://{primary_domain.hostname}"
+        step3_status = "PASSED"
+        step3_details = f"Verified domain active: {domain_url}"
+    else:
+        domain_url = f"https://{site.slug}.cms.local"
+        step3_status = "WARNING"
+        step3_details = f"No verified custom domain registered; using local delivery fallback: {domain_url}"
+
+    # Step 4: Public Delivery Availability
+    is_published = article.status == ArticleStatus.PUBLISHED
+    if is_published:
+        step4_status = "PASSED"
+        step4_details = f"Live snapshot actively delivered at /api/v1/public/sites/{site.slug}/articles/{article.slug}/"
+        step4_error = None
+    elif article.status == ArticleStatus.DRAFT:
+        step4_status = "PENDING"
+        step4_details = "Article is currently in DRAFT state. Not accessible via public delivery until published."
+        step4_error = "Article is not published yet."
+    else:
+        step4_status = "WARNING"
+        step4_details = f"Article status is {article.status}. Public delivery is inactive."
+        step4_error = f"Status is {article.status}."
+
+    # Step 5: Dynamic XML Sitemap Inclusion
+    seo_meta = getattr(article, "seo", None)
+    robots_index = seo_meta.robots_index if seo_meta else True
+    if is_published and robots_index:
+        step5_status = "PASSED"
+        step5_details = f"Included in dynamic sitemap at /api/v1/public/sites/{site.slug}/sitemap.xml"
+        step5_error = None
+    elif not robots_index:
+        step5_status = "SKIPPED"
+        step5_details = "Excluded from sitemap because robots_index is set to False (noindex)."
+        step5_error = None
+    else:
+        step5_status = "SKIPPED"
+        step5_details = "Draft articles are excluded from dynamic XML sitemap."
+        step5_error = None
+
+    # Step 6: Search Engine Indexing Submissions
+    try:
+        from apps.integrations.models import IndexSubmissionLog
+
+        submission_logs = list(
+            IndexSubmissionLog.objects.filter(site=site).order_by("-created_at")[:20]
+        )
+        matching_logs = [
+            l for l in submission_logs if any(article.slug in u for u in (l.urls or []))
+        ]
+    except Exception:
+        matching_logs = []
+
+    if matching_logs:
+        has_failed = any(l.status == "FAILED" for l in matching_logs)
+        has_pending = any(l.status == "PENDING" for l in matching_logs)
+        if has_failed:
+            step6_status = "FAILED"
+            failed_log = next(l for l in matching_logs if l.status == "FAILED")
+            step6_details = f"Submission error on provider {failed_log.provider}: {failed_log.response_body or 'Unknown error'}"
+            step6_error = failed_log.response_body
+        elif has_pending:
+            step6_status = "PENDING"
+            step6_details = f"{len(matching_logs)} submission(s) queued in Celery worker."
+            step6_error = None
+        else:
+            step6_status = "PASSED"
+            providers_str = ", ".join(sorted(set(l.provider for l in matching_logs)))
+            step6_details = f"Successfully notified search engines ({providers_str})."
+            step6_error = None
+
+        logs_summary = [
+            {
+                "id": str(l.id),
+                "provider": l.provider,
+                "status": l.status,
+                "urls": l.urls,
+                "response_code": l.response_code,
+                "response_body": l.response_body,
+                "created_at": l.created_at.isoformat(),
+            }
+            for l in matching_logs
+        ]
+    else:
+        step6_status = "INFO"
+        step6_details = "No automated or manual search engine indexing submissions logged for this article yet."
+        step6_error = None
+        logs_summary = []
+
+    # Step 7: Security Audit Trail
+    try:
+        from apps.audit.models import AuditEvent
+
+        audit_records = list(
+            AuditEvent.objects.filter(
+                resource_type="article", resource_id=str(article.id)
+            ).order_by("-timestamp")[:5]
+        )
+        step7_status = "PASSED" if audit_records else "INFO"
+        step7_details = f"{len(audit_records)} audit event(s) recorded for this article."
+        audit_summary = []
+        for a in audit_records:
+            actor_name = a.actor_email or str(a.actor_id)
+            if redact_sensitive and "@" in actor_name:
+                np, dp = actor_name.split("@", 1)
+                actor_name = f"{np[:2]}***@{dp}"
+            audit_summary.append({
+                "action": a.action,
+                "actor": actor_name,
+                "timestamp": a.timestamp.isoformat(),
+            })
+    except Exception:
+        step7_status = "INFO"
+        step7_details = "No audit events logged yet."
+        audit_summary = []
+
+    overall = (
+        "SUCCESS"
+        if (
+            step1_status == "PASSED"
+            and step4_status == "PASSED"
+            and step6_status != "FAILED"
+        )
+        else (
+            "WARNING"
+            if (
+                step4_status == "PENDING"
+                or step6_status == "PENDING"
+                or step3_status == "WARNING"
+            )
+            else "FAILED"
+        )
+    )
+
+    return {
+        "article": {
+            "id": str(article.id),
+            "title": article.title,
+            "slug": article.slug,
+            "status": article.status,
+            "published_at": (
+                article.published_at.isoformat() if article.published_at else None
+            ),
+            "site_slug": site.slug,
+            "site_name": site.name,
+        },
+        "overall_status": overall,
+        "steps": [
+            {
+                "step_id": "content_validation",
+                "title": "1. Content Integrity & Slug Validation",
+                "status": step1_status,
+                "details": step1_details,
+                "error": step1_error,
+            },
+            {
+                "step_id": "versioning",
+                "title": "2. Version Snapshot & Revision History",
+                "status": step2_status,
+                "details": step2_details,
+                "error": None,
+            },
+            {
+                "step_id": "domain_resolution",
+                "title": "3. Site Domain & Base URL Resolution",
+                "status": step3_status,
+                "details": step3_details,
+                "error": None,
+            },
+            {
+                "step_id": "public_delivery",
+                "title": "4. Public Delivery API Availability",
+                "status": step4_status,
+                "details": step4_details,
+                "error": step4_error,
+            },
+            {
+                "step_id": "sitemap_inclusion",
+                "title": "5. Dynamic XML Sitemap Verification",
+                "status": step5_status,
+                "details": step5_details,
+                "error": step5_error,
+            },
+            {
+                "step_id": "indexing_dispatch",
+                "title": "6. Search Engine Indexing Submissions (Google & IndexNow)",
+                "status": step6_status,
+                "details": step6_details,
+                "error": step6_error,
+                "logs": logs_summary,
+            },
+            {
+                "step_id": "audit_trail",
+                "title": "7. Security Audit Trail",
+                "status": step7_status,
+                "details": step7_details,
+                "events": audit_summary,
+            },
+        ],
+    }
+
+
+class ArticlePipelineFlowView(APIView):
+    """Inspect the end-to-end publishing pipeline flow and health for an article (management)."""
+
+    permission_classes = (permissions.IsAuthenticated, IsWorkspaceMember)
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Publishing pipeline flow details")},
+    )
+    def get(
+        self,
+        request: Request,
+        workspace_id: str,
+        site_id: str,
+        article_id: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Response:
+        workspace = resolve_workspace(request, self)
+        site = _get_site(workspace, site_id)
+        article = _get_article(site, article_id)
+        data = build_article_pipeline_flow(site, article, redact_sensitive=False)
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class PublicArticlePipelineFlowView(APIView):
+    """Public read-only pipeline flow inspection for QA and monitoring."""
+
+    permission_classes = (permissions.AllowAny,)
+    authentication_classes = ()
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Public article publishing pipeline flow details")},
+    )
+    def get(
+        self,
+        request: Request,
+        site_slug: str,
+        article_slug: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Response:
+        site = Site.objects.filter(slug=site_slug, is_active=True).first()
+        if site is None:
+            raise NotFound("Site not found or inactive.")
+
+        _check_public_origin_allowlist(request, site)
+
+        article = Article.objects.filter(site=site, slug=article_slug).first()
+        if article is None:
+            raise NotFound("Article not found.")
+
+        data = build_article_pipeline_flow(site, article, redact_sensitive=True)
+        return Response(data, status=status.HTTP_200_OK)

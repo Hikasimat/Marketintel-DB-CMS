@@ -136,6 +136,91 @@ paths:
           description: ''
         '404':
           description: Site not found
+  /api/v1/public/sites/{site_slug}/analytics-config/:
+    get:
+      operationId: public_sites_analytics_config_retrieve_2
+      description: Public endpoint providing safe, non-secret analytics IDs for browser
+        loaders (ANA-1).
+      summary: Public analytics client configuration
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAnalyticsConfig'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/analytics/events:
+    post:
+      operationId: public_sites_analytics_events_create
+      description: Ingest privacy-preserving first-party analytics events (ANA-4,
+        ANA-5, ANA-6).
+      summary: Ingest first-party event
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          description: Invalid event
+  /api/v1/public/sites/{site_slug}/analytics/events/:
+    post:
+      operationId: public_sites_analytics_events_create_2
+      description: Ingest privacy-preserving first-party analytics events (ANA-4,
+        ANA-5, ANA-6).
+      summary: Ingest first-party event
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          description: Invalid event
   /api/v1/public/sites/{site_slug}/articles/:
     get:
       operationId: public_sites_articles_list
@@ -263,9 +348,67 @@ paths:
           description: Invalid category payload or format
         '404':
           description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/:
+    post:
+      operationId: public_sites_consent_create_2
+      description: Public endpoint for visitors recording their consent decision (CON-3,
+        CON-5).
+      summary: Submit visitor consent decision
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConsentSubmitRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '201':
+          description: Consent recorded
+        '400':
+          description: Invalid category payload or format
+        '404':
+          description: Site not found
   /api/v1/public/sites/{site_slug}/consent-config:
     get:
       operationId: public_sites_consent_config_retrieve
+      description: Public browser contract returning active consent rules and category
+        definitions (CON-2).
+      summary: Get public consent banner configuration
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBannerConfig'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent-config/:
+    get:
+      operationId: public_sites_consent_config_retrieve_2
       description: Public browser contract returning active consent rules and category
         definitions (CON-2).
       summary: Get public consent banner configuration
@@ -317,9 +460,63 @@ paths:
           description: ''
         '404':
           description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/banner-config/:
+    get:
+      operationId: public_sites_consent_banner_config_retrieve_2
+      description: Public browser contract returning active consent rules and category
+        definitions (CON-2).
+      summary: Get public consent banner configuration
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBannerConfig'
+          description: ''
+        '404':
+          description: Site not found
   /api/v1/public/sites/{site_slug}/consent/status:
     get:
       operationId: public_sites_consent_status_retrieve
+      description: Public endpoint for checking effective visitor consent status (CON-2,
+        CON-4).
+      summary: Query visitor consent status
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicConsentStatus'
+          description: ''
+        '404':
+          description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/status/:
+    get:
+      operationId: public_sites_consent_status_retrieve_2
       description: Public endpoint for checking effective visitor consent status (CON-2,
         CON-4).
       summary: Query visitor consent status
@@ -372,9 +569,66 @@ paths:
           description: Consent withdrawn
         '404':
           description: Site not found
+  /api/v1/public/sites/{site_slug}/consent/withdraw/:
+    post:
+      operationId: public_sites_consent_withdraw_create_2
+      description: Public endpoint for visitors withdrawing consent (CON-4).
+      summary: Withdraw visitor consent
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicConsentWithdrawRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '200':
+          description: Consent withdrawn
+        '404':
+          description: Site not found
   /api/v1/public/sites/{site_slug}/events:
     post:
       operationId: public_sites_events_create
+      description: Ingest privacy-preserving first-party analytics events (ANA-4,
+        ANA-5, ANA-6).
+      summary: Ingest first-party event
+      parameters:
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      - {}
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          description: Invalid event
+  /api/v1/public/sites/{site_slug}/events/:
+    post:
+      operationId: public_sites_events_create_2
       description: Ingest privacy-preserving first-party analytics events (ANA-4,
         ANA-5, ANA-6).
       summary: Ingest first-party event
@@ -440,25 +694,6 @@ paths:
           description: XML sitemap document
         '404':
           description: Site not found
-  /api/v1/webhooks/github/:
-    post:
-      operationId: webhooks_github_create
-      description: Verify HMAC-SHA256 signature, deduplicate delivery ID, and process
-        installation events.
-      summary: GitHub App Webhook Ingestion
-      tags:
-      - GitHub Integration
-      security:
-      - {}
-      responses:
-        '200':
-          description: Webhook received and processed.
-        '400':
-          description: Missing required webhook headers.
-        '401':
-          description: Invalid signature verification.
-        '403':
-          description: GitHub App integration disabled.
   /api/v1/workspaces/:
     get:
       operationId: workspaces_list
@@ -605,146 +840,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAuditEventList'
           description: ''
-  /api/v1/workspaces/{workspace_id}/github/installations/:
-    get:
-      operationId: workspaces_github_installations_list
-      description: Retrieve all GitHub App installations authorized for this workspace.
-      summary: List GitHub App Installations
-      parameters:
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/GitHubAppInstallation'
-          description: ''
-    post:
-      operationId: workspaces_github_installations_create
-      description: Record a newly authorized GitHub App installation for the workspace.
-      summary: Register GitHub App Installation
-      parameters:
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitHubAppInstallationRegisterRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitHubAppInstallation'
-          description: ''
-        '400':
-          description: Validation error.
-  /api/v1/workspaces/{workspace_id}/github/installations/{installation_id}/:
-    get:
-      operationId: workspaces_github_installations_retrieve
-      description: Retrieve or disconnect an authorized GitHub App installation.
-      summary: Get GitHub App Installation Details
-      parameters:
-      - in: path
-        name: installation_id
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitHubAppInstallation'
-          description: ''
-        '404':
-          description: Installation not found.
-    delete:
-      operationId: workspaces_github_installations_destroy
-      description: Retrieve or disconnect an authorized GitHub App installation.
-      summary: Deactivate GitHub App Installation
-      parameters:
-      - in: path
-        name: installation_id
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '204':
-          description: Installation deactivated.
-        '404':
-          description: Installation not found.
-  /api/v1/workspaces/{workspace_id}/github/installations/{installation_id}/repositories/:
-    get:
-      operationId: workspaces_github_installations_repositories_retrieve
-      description: Query GitHub for repositories accessible under this authorized
-        installation.
-      summary: List Accessible Repositories
-      parameters:
-      - in: path
-        name: installation_id
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          description: List of accessible repository objects.
   /api/v1/workspaces/{workspace_id}/media/:
     get:
       operationId: workspaces_media_list
@@ -2266,181 +2361,6 @@ paths:
           description: ''
         '400':
           description: Verification failed
-  /api/v1/workspaces/{workspace_id}/sites/{site_id}/github/analyze/:
-    post:
-      operationId: workspaces_sites_github_analyze_create
-      description: Inspect manifest files (package.json, config files) strictly as
-        untrusted data to detect frontend framework.
-      summary: Analyze Repository Framework
-      parameters:
-      - in: path
-        name: site_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FrameworkDetectionResponse'
-          description: ''
-        '400':
-          description: Manifest validation error.
-        '404':
-          description: Connected repository not found.
-  /api/v1/workspaces/{workspace_id}/sites/{site_id}/github/connect/:
-    post:
-      operationId: workspaces_sites_github_connect_create
-      description: Link a repository and branch from an authorized installation to
-        a site.
-      summary: Connect GitHub Repository to Site
-      parameters:
-      - in: path
-        name: site_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitHubRepoConnectRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SiteGitHubRepoConnection'
-          description: ''
-        '400':
-          description: Validation error or branch not found.
-        '404':
-          description: Site or installation not found.
-  /api/v1/workspaces/{workspace_id}/sites/{site_id}/github/connection/:
-    get:
-      operationId: workspaces_sites_github_connection_retrieve
-      description: Retrieve or disconnect repository connection for a site (GH-2).
-      summary: Get Site GitHub Connection
-      parameters:
-      - in: path
-        name: site_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SiteGitHubRepoConnection'
-          description: ''
-        '404':
-          description: Connection not found.
-    delete:
-      operationId: workspaces_sites_github_connection_destroy
-      description: Retrieve or disconnect repository connection for a site (GH-2).
-      summary: Disconnect Site GitHub Repository
-      parameters:
-      - in: path
-        name: site_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '204':
-          description: Repository disconnected.
-        '404':
-          description: Connection not found.
-  /api/v1/workspaces/{workspace_id}/sites/{site_id}/github/open-pr/:
-    post:
-      operationId: workspaces_sites_github_open_pr_create
-      description: Creates an integration branch and opens a Pull Request with boilerplate
-        client code. Never commits to default branch.
-      summary: Open Integration Pull Request
-      parameters:
-      - in: path
-        name: site_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: workspace_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - GitHub Integration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IntegrationPROpenRequest'
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IntegrationPRResponse'
-          description: ''
-        '400':
-          description: Branch validation or git error.
-        '404':
-          description: Connection not found.
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/connections/:
     get:
       operationId: workspaces_sites_integrations_connections_list
@@ -3574,32 +3494,6 @@ components:
       - path
       - session_id
       - visitor_id
-    FrameworkDetectionResponse:
-      type: object
-      description: Result serializer for framework analysis from untrusted manifests
-        (GH-3, GH-5).
-      properties:
-        detected_framework:
-          $ref: '#/components/schemas/GitHubFrameworkEnum'
-        confidence:
-          type: string
-        manual_integration_required:
-          type: boolean
-        integration_guide_url:
-          type: string
-          format: uri
-        reason:
-          type: string
-        manifest_summary:
-          type: object
-          additionalProperties: {}
-      required:
-      - confidence
-      - detected_framework
-      - integration_guide_url
-      - manifest_summary
-      - manual_integration_required
-      - reason
     GA4Connection:
       type: object
       description: Serializer for GA4 authorized connection with write-only credentials
@@ -3664,135 +3558,6 @@ components:
       description: |-
         * `granted` - Granted
         * `denied` - Denied
-    GitHubAppInstallation:
-      type: object
-      description: Serializer for active GitHub App installations (GH-1).
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        workspace_id:
-          type: string
-          format: uuid
-          readOnly: true
-        installation_id:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
-        account_login:
-          type: string
-          maxLength: 255
-        account_type:
-          type: string
-          maxLength: 50
-        repository_selection:
-          type: string
-          maxLength: 20
-        permissions:
-          description: Snapshot of granted GitHub App permissions (contents, pull_requests,
-            metadata).
-        is_active:
-          type: boolean
-          description: Active state of this installation; toggled False upon uninstall
-            or suspension.
-        suspended_at:
-          type: string
-          format: date-time
-          nullable: true
-        installed_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - account_login
-      - id
-      - installation_id
-      - installed_at
-      - updated_at
-      - workspace_id
-    GitHubAppInstallationRegisterRequest:
-      type: object
-      description: Payload serializer for registering a newly authorized installation.
-      properties:
-        installation_id:
-          type: integer
-          minimum: 1
-        account_login:
-          type: string
-          minLength: 1
-          maxLength: 255
-        account_type:
-          type: string
-          minLength: 1
-          default: User
-          maxLength: 50
-        repository_selection:
-          type: string
-          minLength: 1
-          default: selected
-          maxLength: 20
-        permissions:
-          type: object
-          additionalProperties: {}
-      required:
-      - account_login
-      - installation_id
-    GitHubFrameworkEnum:
-      enum:
-      - NEXT_JS
-      - VITE_REACT
-      - ASTRO
-      - NUXT
-      - REMIX
-      - UNSUPPORTED
-      type: string
-      description: |-
-        * `NEXT_JS` - Next.js
-        * `VITE_REACT` - Vite (React)
-        * `ASTRO` - Astro
-        * `NUXT` - Nuxt
-        * `REMIX` - Remix
-        * `UNSUPPORTED` - Unsupported Framework
-    GitHubIntegrationStatusEnum:
-      enum:
-      - CONNECTED
-      - ANALYZED
-      - PR_OPENED
-      - FAILED
-      - DISCONNECTED
-      type: string
-      description: |-
-        * `CONNECTED` - Connected
-        * `ANALYZED` - Framework Analyzed
-        * `PR_OPENED` - Pull Request Opened
-        * `FAILED` - Integration Failed
-        * `DISCONNECTED` - Disconnected
-    GitHubRepoConnectRequest:
-      type: object
-      description: Payload serializer for connecting an authorized repository to a
-        site (GH-2).
-      properties:
-        installation_id:
-          type: integer
-          description: Numeric installation ID of the authorized GitHub App.
-        repo_full_name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        selected_branch:
-          type: string
-          minLength: 1
-          default: main
-          maxLength: 100
-      required:
-      - installation_id
-      - repo_full_name
     IndexNowKey:
       type: object
       description: Serializer for IndexNow key hosted verification file.
@@ -3875,57 +3640,6 @@ components:
       - status
       - updated_at
       - urls
-    IntegrationPROpenRequest:
-      type: object
-      description: Payload serializer for opening an integration pull request (GH-4).
-      properties:
-        commit_message:
-          type: string
-          minLength: 1
-          default: Add CMS integration client configuration
-          maxLength: 255
-        pr_title:
-          type: string
-          minLength: 1
-          default: CMS Integration Setup
-          maxLength: 255
-        pr_body:
-          type: string
-          minLength: 1
-          default: |-
-            ### CMS Backend Integration
-
-            This Pull Request adds the required configuration and client helper files to connect your frontend to the headless CMS API.
-        branch_name:
-          type: string
-          default: ''
-          maxLength: 100
-    IntegrationPRResponse:
-      type: object
-      description: Response serializer after pull request creation (GH-4).
-      properties:
-        pr_number:
-          type: integer
-        pr_url:
-          type: string
-          format: uri
-        base_branch:
-          type: string
-        new_branch:
-          type: string
-        title:
-          type: string
-        committed_files:
-          type: array
-          items:
-            type: string
-      required:
-      - base_branch
-      - committed_files
-      - new_branch
-      - pr_number
-      - pr_url
-      - title
     JurisdictionModeEnum:
       enum:
       - GDPR
@@ -3965,7 +3679,8 @@ components:
       description: Request serializer for manual URL batch submission to search engines.
       properties:
         provider:
-          $ref: '#/components/schemas/ProviderEnum'
+          type: string
+          minLength: 1
         urls:
           type: array
           items:
@@ -4642,16 +4357,6 @@ components:
       - policy_version
       - requires_reconsent
       - status
-    PublicConsentSubmitConsentTypeEnum:
-      enum:
-      - EXPLICIT_OPT_IN
-      - OPT_OUT
-      - IMPLICIT_NECESSARY_ONLY
-      type: string
-      description: |-
-        * `EXPLICIT_OPT_IN` - EXPLICIT_OPT_IN
-        * `OPT_OUT` - OPT_OUT
-        * `IMPLICIT_NECESSARY_ONLY` - IMPLICIT_NECESSARY_ONLY
     PublicConsentSubmitRequest:
       type: object
       description: Payload serializer for visitor submitting consent choices (CON-3).
@@ -4669,8 +4374,8 @@ components:
           additionalProperties:
             type: boolean
         consent_type:
-          allOf:
-          - $ref: '#/components/schemas/PublicConsentSubmitConsentTypeEnum'
+          type: string
+          minLength: 1
           default: EXPLICIT_OPT_IN
       required:
       - categories
@@ -5046,83 +4751,6 @@ components:
           type: boolean
       required:
       - name
-    SiteGitHubRepoConnection:
-      type: object
-      description: Serializer for repository-to-site connection details (GH-2, GH-4).
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        site_id:
-          type: string
-          format: uuid
-          readOnly: true
-        installation_id:
-          type: integer
-          readOnly: true
-        repo_full_name:
-          type: string
-          readOnly: true
-          description: Repository slug (owner/repo).
-        default_branch:
-          type: string
-          readOnly: true
-        selected_branch:
-          type: string
-          readOnly: true
-        detected_framework:
-          allOf:
-          - $ref: '#/components/schemas/GitHubFrameworkEnum'
-          readOnly: true
-        framework_manifest:
-          readOnly: true
-          description: Extracted dependency metadata parsed strictly as untrusted
-            data (GH-3).
-        integration_status:
-          allOf:
-          - $ref: '#/components/schemas/GitHubIntegrationStatusEnum'
-          readOnly: true
-        last_pr_url:
-          type: string
-          format: uri
-          readOnly: true
-        last_pr_number:
-          type: integer
-          readOnly: true
-          nullable: true
-        last_synced_at:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        last_error:
-          type: string
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - default_branch
-      - detected_framework
-      - framework_manifest
-      - id
-      - installation_id
-      - integration_status
-      - last_error
-      - last_pr_number
-      - last_pr_url
-      - last_synced_at
-      - repo_full_name
-      - selected_branch
-      - site_id
-      - updated_at
     SiteSEOSettings:
       type: object
       properties:

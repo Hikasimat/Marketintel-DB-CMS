@@ -5,12 +5,14 @@ from django.urls import path
 from apps.content.views import (
     ArticleDetailView,
     ArticleListCreateView,
+    ArticlePipelineFlowView,
     ArticlePublishView,
     ArticleVersionListView,
     ArticleVersionRestoreView,
     MediaAssetListCreateView,
     PublicArticleDetailView,
     PublicArticleListView,
+    PublicArticlePipelineFlowView,
 )
 
 app_name = "content"
@@ -31,6 +33,11 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/articles/<uuid:article_id>/publish/",
         ArticlePublishView.as_view(),
         name="article_publish",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/articles/<uuid:article_id>/pipeline-flow/",
+        ArticlePipelineFlowView.as_view(),
+        name="article_pipeline_flow",
     ),
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/articles/<uuid:article_id>/versions/",
@@ -57,5 +64,10 @@ urlpatterns = [
         "public/sites/<slug:site_slug>/articles/<slug:article_slug>/",
         PublicArticleDetailView.as_view(),
         name="public_article_detail",
+    ),
+    path(
+        "public/sites/<slug:site_slug>/articles/<slug:article_slug>/pipeline-flow/",
+        PublicArticlePipelineFlowView.as_view(),
+        name="public_article_pipeline_flow",
     ),
 ]

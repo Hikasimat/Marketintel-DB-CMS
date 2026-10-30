@@ -80,11 +80,23 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
     )
 
     # --- Database (PostgreSQL only) --------------------------------------
-    db_name = env.str("POSTGRES_DB", REQUIRED if is_prod else "cms")
-    db_user = env.str("POSTGRES_USER", REQUIRED if is_prod else "cms")
-    db_password = env.str("POSTGRES_PASSWORD", REQUIRED if is_prod else "cms")
-    db_host = env.str("POSTGRES_HOST", "localhost")
-    db_port = env.int("POSTGRES_PORT", 55432 if not is_prod else 5432, min_value=1, max_value=65535)
+    from urllib.parse import unquote, urlsplit
+
+    database_url = env.str("DATABASE_URL", default=None)
+    if database_url:
+        parsed_db = urlsplit(database_url)
+        db_user = unquote(parsed_db.username) if parsed_db.username else "cms"
+        db_password = unquote(parsed_db.password) if parsed_db.password else "cms"
+        db_host = parsed_db.hostname or "localhost"
+        db_port = parsed_db.port or (5432 if is_prod else 55432)
+        db_name = parsed_db.path.lstrip("/") or "postgres"
+    else:
+        db_name = env.str("POSTGRES_DB", REQUIRED if is_prod else "cms")
+        db_user = env.str("POSTGRES_USER", REQUIRED if is_prod else "cms")
+        db_password = env.str("POSTGRES_PASSWORD", REQUIRED if is_prod else "cms")
+        db_host = env.str("POSTGRES_HOST", "localhost")
+        db_port = env.int("POSTGRES_PORT", 55432 if not is_prod else 5432, min_value=1, max_value=65535)
+
     db_conn_max_age = env.int("POSTGRES_CONN_MAX_AGE", 60, min_value=0, max_value=3600)
     db_sslmode = env.str(
         "POSTGRES_SSLMODE",
@@ -142,13 +154,6 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         problem="must look like '<n>/<sec|min|hour|day>'",
     )
 
-    github_app_enabled = env.bool("GITHUB_APP_ENABLED", default=False)
-    github_app_id = env.str("GITHUB_APP_ID", default="")
-    github_app_private_key = env.str("GITHUB_APP_PRIVATE_KEY", default="")
-    github_app_webhook_secret = env.str("GITHUB_APP_WEBHOOK_SECRET", default="")
-    github_app_client_id = env.str("GITHUB_APP_CLIENT_ID", default="")
-    github_app_client_secret = env.str("GITHUB_APP_CLIENT_SECRET", default="")
-
     env.raise_if_errors()
 
     # --- Assemble ---------------------------------------------------------
@@ -171,7 +176,6 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "apps.integrations",
         "apps.analytics",
         "apps.consent",
-        "apps.github_integration",
     ]
     if admin_enabled:
         installed_apps.insert(0, "django.contrib.admin")
@@ -312,15 +316,13 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
                 "ConsentTypeEnum": "apps.consent.models.ConsentType",
                 "JurisdictionModeEnum": "apps.consent.models.JurisdictionMode",
                 "GCMStateEnum": "apps.consent.models.GCMState",
-                "GitHubFrameworkEnum": "apps.github_integration.models.DetectedFramework",
-                "GitHubIntegrationStatusEnum": "apps.github_integration.models.IntegrationStatus",
             },
         },
         # --- CORS (never used as authentication; SEC-2) ---
         "CORS_ALLOWED_ORIGINS": cors_origins,
         "CORS_ALLOW_ALL_ORIGINS": not is_prod,
         "CORS_ALLOW_CREDENTIALS": False,
-        "CORS_URLS_REGEX": r"^/api/.*$",
+        "CORS_URLS_REGEX": r"^.*$",
         # --- Security headers ---
         "SECURE_CONTENT_TYPE_NOSNIFF": True,
         "SECURE_REFERRER_POLICY": "same-origin",
@@ -351,13 +353,6 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "CELERY_TASK_SOFT_TIME_LIMIT": 240,
         "CELERY_TASK_DEFAULT_QUEUE": "default",
         "CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP": True,
-        # --- GitHub App Integration (Stage 8, feature-flagged) ---
-        "GITHUB_APP_ENABLED": github_app_enabled,
-        "GITHUB_APP_ID": github_app_id,
-        "GITHUB_APP_PRIVATE_KEY": github_app_private_key,
-        "GITHUB_APP_WEBHOOK_SECRET": github_app_webhook_secret,
-        "GITHUB_APP_CLIENT_ID": github_app_client_id,
-        "GITHUB_APP_CLIENT_SECRET": github_app_client_secret,
         # --- Logging ---
         "LOGGING": _logging_config(log_level, log_json),
     }

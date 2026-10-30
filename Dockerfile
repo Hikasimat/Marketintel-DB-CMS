@@ -35,10 +35,14 @@ RUN groupadd -r cms && useradd -r -g cms -d /app -s /sbin/nologin cms
 
 COPY . .
 
-RUN chown -R cms:cms /app
+RUN chmod +x /app/docker-entrypoint.sh && chown -R cms:cms /app
 
 USER cms
 
 EXPOSE 8000
 
-CMD ["gunicorn", "cms.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health/ || exit 1
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["gunicorn", "cms.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "60"]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.http import HttpResponse
 from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import (
@@ -15,6 +16,8 @@ from apps.common.console import testing_console_view
 from apps.common.health import LiveCheckView, ReadyCheckView
 
 urlpatterns = [
+    # Favicon 204
+    path("favicon.ico", lambda r: HttpResponse(status=204)),
     # Interactive Developer & QA Testing Console
     path("console/", testing_console_view, name="testing_console"),
     path("", RedirectView.as_view(url="/console/", permanent=False)),
@@ -33,7 +36,6 @@ urlpatterns = [
     path("api/v1/", include("apps.integrations.urls")),
     path("api/v1/", include("apps.analytics.urls")),
     path("api/v1/", include("apps.consent.urls")),
-    path("api/v1/", include("apps.github_integration.urls")),
 ]
 
 # Interactive API documentation (enabled only in non-production or when explicitly configured)
