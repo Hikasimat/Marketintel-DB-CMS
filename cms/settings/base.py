@@ -71,6 +71,16 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         env.errors.append("DJANGO_ALLOWED_HOSTS is required in production")
     if is_prod and "*" in allowed_hosts:
         env.errors.append("DJANGO_ALLOWED_HOSTS must not contain '*' in production")
+    if is_prod:
+        import socket
+
+        try:
+            container_ip = socket.gethostbyname(socket.gethostname())
+            if container_ip not in allowed_hosts:
+                allowed_hosts.append(container_ip)
+            allowed_hosts.extend([".compute.internal", ".elb.amazonaws.com"])
+        except Exception:
+            pass
 
     public_base_url = env.str(
         "PUBLIC_BASE_URL",
@@ -334,7 +344,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         "SECURE_CROSS_ORIGIN_OPENER_POLICY": "same-origin",
         "X_FRAME_OPTIONS": "DENY",
         "SECURE_SSL_REDIRECT": ssl_redirect,
-        "SECURE_REDIRECT_EXEMPT": [r"^health/"],
+        "SECURE_REDIRECT_EXEMPT": [r"^api/v1/health/", r"^health/"],
         "SECURE_HSTS_SECONDS": hsts_seconds,
         "SECURE_HSTS_INCLUDE_SUBDOMAINS": hsts_seconds > 0,
         "SECURE_HSTS_PRELOAD": env.bool("SECURE_HSTS_PRELOAD", default=is_prod),
