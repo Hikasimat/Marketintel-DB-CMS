@@ -25,6 +25,9 @@ jobs:
   deploy:
     name: Build & Deploy Backend Service to AWS ECS
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -32,7 +35,7 @@ jobs:
       - name: Configure AWS Credentials via GitHub OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN || 'arn:aws:iam::796498481393:role/github-actions-marketintel-cms-role' }}
           role-session-name: GitHubActionsECSDeploy
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com

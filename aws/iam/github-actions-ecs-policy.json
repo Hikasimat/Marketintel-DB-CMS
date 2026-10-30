@@ -23,7 +23,7 @@
         "ecr:DescribeRepositories",
         "ecr:ListImages"
       ],
-      "Resource": "arn:aws:ecr:*:ACCOUNT_ID:repository/marketintel-db-cms"
+      "Resource": "arn:aws:ecr:*:796498481393:repository/marketintel-db-cms"
     },
     {
       "Sid": "ECSDeployPermissions",
@@ -43,8 +43,8 @@
         "iam:PassRole"
       ],
       "Resource": [
-        "arn:aws:iam::ACCOUNT_ID:role/marketintel-cms-task-execution-role",
-        "arn:aws:iam::ACCOUNT_ID:role/marketintel-cms-task-role"
+        "arn:aws:iam::796498481393:role/marketintel-cms-task-execution-role",
+        "arn:aws:iam::796498481393:role/marketintel-cms-task-role"
       ]
     }
   ]

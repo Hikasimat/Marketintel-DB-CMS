@@ -4,7 +4,7 @@
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "arn:aws:iam::796498481393:oidc-provider/token.actions.githubusercontent.com"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
@@ -15,6 +15,12 @@
           "token.actions.githubusercontent.com:sub": [
             "repo:*Marketintel-DB-CMS*:*",
             "repo:*marketintel-db-cms*:*",
+            "repo:*Marketintel*:*",
+            "repo:*marketintel*:*",
+            "repo:Hikasimat/*:*",
+            "repo:Hikasimat@*:*",
+            "repo:Mohanraj02V/*:*",
+            "repo:Mohanraj02V@*:*",
             "repo:Hikasimat*:*",
             "repo:hikasimat*:*",
             "repo:Mohanraj02V*:*",

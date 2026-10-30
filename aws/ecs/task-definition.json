@@ -6,12 +6,12 @@
   ],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/marketintel-cms-task-execution-role",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/marketintel-cms-task-role",
+  "executionRoleArn": "arn:aws:iam::796498481393:role/marketintel-cms-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::796498481393:role/marketintel-cms-task-role",
   "containerDefinitions": [
     {
       "name": "cms-backend",
-      "image": "ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/marketintel-db-cms:latest",
+      "image": "796498481393.dkr.ecr.ap-south-1.amazonaws.com/marketintel-db-cms:latest",
       "essential": true,
       "portMappings": [
         {
@@ -49,38 +49,38 @@
       "secrets": [
         {
           "name": "DJANGO_SECRET_KEY",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/DJANGO_SECRET_KEY"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/DJANGO_SECRET_KEY"
         },
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/DATABASE_URL"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/DATABASE_URL"
         },
         {
           "name": "REDIS_URL",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/REDIS_URL"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/REDIS_URL"
         },
         {
           "name": "FIELD_ENCRYPTION_KEY",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/FIELD_ENCRYPTION_KEY"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/FIELD_ENCRYPTION_KEY"
         },
         {
           "name": "JWT_SIGNING_KEY",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/JWT_SIGNING_KEY"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/JWT_SIGNING_KEY"
         },
         {
           "name": "PUBLIC_BASE_URL",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/PUBLIC_BASE_URL"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/PUBLIC_BASE_URL"
         },
         {
           "name": "DJANGO_ALLOWED_HOSTS",
-          "valueFrom": "arn:aws:ssm:AWS_REGION:ACCOUNT_ID:parameter/marketintel-cms/DJANGO_ALLOWED_HOSTS"
+          "valueFrom": "arn:aws:ssm:ap-south-1:796498481393:parameter/marketintel-cms/DJANGO_ALLOWED_HOSTS"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/marketintel-cms-backend",
-          "awslogs-region": "AWS_REGION",
+          "awslogs-region": "ap-south-1",
           "awslogs-stream-prefix": "ecs"
         }
       },
