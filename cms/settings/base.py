@@ -309,6 +309,7 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
             "VERSION": "1.0.0",
             "SERVE_INCLUDE_SCHEMA": False,
             "SCHEMA_PATH_PREFIX": r"/api/v1",
+            "PREPROCESSING_HOOKS": ["apps.common.spectacular.filter_duplicate_slash_endpoints"],
             "COMPONENT_SPLIT_REQUEST": True,
             "ENUM_NAME_OVERRIDES": {
                 "ArticleStatusEnum": "apps.content.models.ArticleStatus",
