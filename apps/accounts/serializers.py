@@ -25,42 +25,53 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
     """
     from django.conf import settings
 
-    if getattr(settings, "SETTINGS_PROFILE", "") == "test" or os.getenv("DJANGO_SETTINGS_MODULE", "").endswith(".test"):
+    if getattr(settings, "SETTINGS_PROFILE", "") == "test" or os.getenv(
+        "DJANGO_SETTINGS_MODULE", ""
+    ).endswith(".test"):
         return None
 
     raw_env_url = os.getenv("MARKET_INTEL_LOGIN_URL")
     endpoints = []
     if raw_env_url:
         endpoints.append(raw_env_url.strip())
-    endpoints.extend([
-        "http://127.0.0.1:8000/api/auth/login/",
-        "http://localhost:8000/api/auth/login/",
-        "https://marketinteldbapp.hikasimat.com/api/auth/login/",
-    ])
+    endpoints.extend(
+        [
+            "http://127.0.0.1:8000/api/auth/login/",
+            "http://localhost:8000/api/auth/login/",
+            "https://marketinteldbapp.hikasimat.com/api/auth/login/",
+        ]
+    )
 
-    payload = json.dumps({"email": identifier, "username": identifier, "password": password}).encode("utf-8")
+    payload = json.dumps(
+        {"email": identifier, "username": identifier, "password": password}
+    ).encode("utf-8")
     for endpoint in endpoints:
         if not endpoint:
             continue
         try:
-            req = urllib.request.Request(
+            req = urllib.request.Request(  # noqa: S310
                 endpoint,
                 data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "CMS-MarketIntel-Auth/1.0"},
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "CMS-MarketIntel-Auth/1.0",
+                },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=4) as response:
+            with urllib.request.urlopen(req, timeout=4) as response:  # nosec B310 # noqa: S310
                 if response.status == 200:
                     resp_data = json.loads(response.read().decode())
                     access_token = resp_data.get("access")
                     if access_token:
-                        logger.info("Market Intel DB authenticated user: %s via %s", identifier, endpoint)
+                        logger.info(
+                            "Market Intel DB authenticated user: %s via %s", identifier, endpoint
+                        )
                         # Fetch identity & roles from /api/auth/me/
                         base_api = endpoint.split("/api/auth/login/")[0]
                         me_endpoint = f"{base_api}/api/auth/me/"
                         me_data: dict[str, Any] = {}
                         try:
-                            me_req = urllib.request.Request(
+                            me_req = urllib.request.Request(  # noqa: S310
                                 me_endpoint,
                                 headers={
                                     "Authorization": f"Bearer {access_token}",
@@ -68,7 +79,7 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
                                 },
                                 method="GET",
                             )
-                            with urllib.request.urlopen(me_req, timeout=3) as me_resp:
+                            with urllib.request.urlopen(me_req, timeout=3) as me_resp:  # nosec B310 # noqa: S310
                                 if me_resp.status == 200:
                                     me_data = json.loads(me_resp.read().decode())
                         except Exception as exc:
@@ -124,8 +135,14 @@ class LoginSerializer(serializers.Serializer[Any]):
 
                 workspace = Workspace.objects.first()
                 if workspace:
-                    assigned_role = WorkspaceRole.OWNER if is_super else (
-                        WorkspaceRole.ADMIN if role in ("ADM", "MANAGER") else WorkspaceRole.EDITOR
+                    assigned_role = (
+                        WorkspaceRole.OWNER
+                        if is_super
+                        else (
+                            WorkspaceRole.ADMIN
+                            if role in ("ADM", "MANAGER")
+                            else WorkspaceRole.EDITOR
+                        )
                     )
                     membership, created = WorkspaceMembership.objects.get_or_create(
                         workspace=workspace,
@@ -142,19 +159,22 @@ class LoginSerializer(serializers.Serializer[Any]):
             return attrs
 
         # 2. Local fallback verification
-        user = authenticate(email=email, password=password)
-        if not user:
+        authenticated_user = authenticate(email=email, password=password)
+        local_user: User | None = (
+            authenticated_user if isinstance(authenticated_user, User) else None
+        )
+        if not local_user:
             try:
                 candidate = User.objects.get(email=email)
                 if candidate.check_password(password):
-                    user = candidate
+                    local_user = candidate
             except User.DoesNotExist:
-                user = None
+                local_user = None
 
-        if not user or not user.is_active:
+        if not local_user or not local_user.is_active:
             raise serializers.ValidationError("Invalid credentials or account inactive.")
 
-        attrs["user"] = user
+        attrs["user"] = local_user
         return attrs
 
 

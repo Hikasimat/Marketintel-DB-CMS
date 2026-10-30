@@ -471,7 +471,9 @@ class PublicArticleDetailView(APIView):
         return response
 
 
-def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: bool = False) -> dict:
+def build_article_pipeline_flow(
+    site: Site, article: Article, redact_sensitive: bool = False
+) -> dict:
     """Evaluate and compile the 7-step publishing pipeline diagnostics for an article."""
     # Step 1: Content & Slug Validation
     slug_valid = bool(article.slug and not any(c in article.slug for c in " /\\?#@!"))
@@ -487,17 +489,16 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
     versions = list(ArticleVersion.objects.filter(article=article).order_by("-version_number"))
     latest_ver = versions[0] if versions else None
     author_email = (
-        latest_ver.created_by.email
-        if (latest_ver and latest_ver.created_by)
-        else "admin@cms.local"
+        latest_ver.created_by.email if (latest_ver and latest_ver.created_by) else "admin@cms.local"
     )
     if redact_sensitive and "@" in author_email:
         name_part, domain_part = author_email.split("@", 1)
         author_email = f"{name_part[:2]}***@{domain_part}"
 
     step2_status = "PASSED" if versions else "WARNING"
+    active_v = latest_ver.version_number if latest_ver else 1
     step2_details = (
-        f"Total revisions: {len(versions)}. Active snapshot version: #{latest_ver.version_number if latest_ver else 1} "
+        f"Total revisions: {len(versions)}. Active snapshot version: #{active_v} "
         f"(authored by {author_email})."
     )
 
@@ -513,17 +514,25 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
     else:
         domain_url = f"https://{site.slug}.cms.local"
         step3_status = "WARNING"
-        step3_details = f"No verified custom domain registered; using local delivery fallback: {domain_url}"
+        step3_details = (
+            f"No verified custom domain registered; using local delivery fallback: {domain_url}"
+        )
 
     # Step 4: Public Delivery Availability
     is_published = article.status == ArticleStatus.PUBLISHED
     if is_published:
         step4_status = "PASSED"
-        step4_details = f"Live snapshot actively delivered at /api/v1/public/sites/{site.slug}/articles/{article.slug}/"
+        step4_details = (
+            f"Live snapshot actively delivered at "
+            f"/api/v1/public/sites/{site.slug}/articles/{article.slug}/"
+        )
         step4_error = None
     elif article.status == ArticleStatus.DRAFT:
         step4_status = "PENDING"
-        step4_details = "Article is currently in DRAFT state. Not accessible via public delivery until published."
+        step4_details = (
+            "Article is currently in DRAFT state. "
+            "Not accessible via public delivery until published."
+        )
         step4_error = "Article is not published yet."
     else:
         step4_status = "WARNING"
@@ -535,7 +544,9 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
     robots_index = seo_meta.robots_index if seo_meta else True
     if is_published and robots_index:
         step5_status = "PASSED"
-        step5_details = f"Included in dynamic sitemap at /api/v1/public/sites/{site.slug}/sitemap.xml"
+        step5_details = (
+            f"Included in dynamic sitemap at /api/v1/public/sites/{site.slug}/sitemap.xml"
+        )
         step5_error = None
     elif not robots_index:
         step5_status = "SKIPPED"
@@ -554,18 +565,21 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
             IndexSubmissionLog.objects.filter(site=site).order_by("-created_at")[:20]
         )
         matching_logs = [
-            l for l in submission_logs if any(article.slug in u for u in (l.urls or []))
+            sub_log
+            for sub_log in submission_logs
+            if any(article.slug in u for u in (sub_log.urls or []))
         ]
     except Exception:
         matching_logs = []
 
     if matching_logs:
-        has_failed = any(l.status == "FAILED" for l in matching_logs)
-        has_pending = any(l.status == "PENDING" for l in matching_logs)
+        has_failed = any(sub_log.status == "FAILED" for sub_log in matching_logs)
+        has_pending = any(sub_log.status == "PENDING" for sub_log in matching_logs)
         if has_failed:
             step6_status = "FAILED"
-            failed_log = next(l for l in matching_logs if l.status == "FAILED")
-            step6_details = f"Submission error on provider {failed_log.provider}: {failed_log.response_body or 'Unknown error'}"
+            failed_log = next(sub_log for sub_log in matching_logs if sub_log.status == "FAILED")
+            err_msg = failed_log.response_body or "Unknown error"
+            step6_details = f"Submission error on provider {failed_log.provider}: {err_msg}"
             step6_error = failed_log.response_body
         elif has_pending:
             step6_status = "PENDING"
@@ -573,25 +587,27 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
             step6_error = None
         else:
             step6_status = "PASSED"
-            providers_str = ", ".join(sorted(set(l.provider for l in matching_logs)))
+            providers_str = ", ".join(sorted({sub_log.provider for sub_log in matching_logs}))
             step6_details = f"Successfully notified search engines ({providers_str})."
             step6_error = None
 
         logs_summary = [
             {
-                "id": str(l.id),
-                "provider": l.provider,
-                "status": l.status,
-                "urls": l.urls,
-                "response_code": l.response_code,
-                "response_body": l.response_body,
-                "created_at": l.created_at.isoformat(),
+                "id": str(sub_log.id),
+                "provider": sub_log.provider,
+                "status": sub_log.status,
+                "urls": sub_log.urls,
+                "response_code": sub_log.response_code,
+                "response_body": sub_log.response_body,
+                "created_at": sub_log.created_at.isoformat(),
             }
-            for l in matching_logs
+            for sub_log in matching_logs
         ]
     else:
         step6_status = "INFO"
-        step6_details = "No automated or manual search engine indexing submissions logged for this article yet."
+        step6_details = (
+            "No automated or manual search engine indexing submissions logged for this article yet."
+        )
         step6_error = None
         logs_summary = []
 
@@ -612,11 +628,13 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
             if redact_sensitive and "@" in actor_name:
                 np, dp = actor_name.split("@", 1)
                 actor_name = f"{np[:2]}***@{dp}"
-            audit_summary.append({
-                "action": a.action,
-                "actor": actor_name,
-                "timestamp": a.timestamp.isoformat(),
-            })
+            audit_summary.append(
+                {
+                    "action": a.action,
+                    "actor": actor_name,
+                    "timestamp": a.timestamp.isoformat(),
+                }
+            )
     except Exception:
         step7_status = "INFO"
         step7_details = "No audit events logged yet."
@@ -624,18 +642,10 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
 
     overall = (
         "SUCCESS"
-        if (
-            step1_status == "PASSED"
-            and step4_status == "PASSED"
-            and step6_status != "FAILED"
-        )
+        if (step1_status == "PASSED" and step4_status == "PASSED" and step6_status != "FAILED")
         else (
             "WARNING"
-            if (
-                step4_status == "PENDING"
-                or step6_status == "PENDING"
-                or step3_status == "WARNING"
-            )
+            if (step4_status == "PENDING" or step6_status == "PENDING" or step3_status == "WARNING")
             else "FAILED"
         )
     )
@@ -646,9 +656,7 @@ def build_article_pipeline_flow(site: Site, article: Article, redact_sensitive: 
             "title": article.title,
             "slug": article.slug,
             "status": article.status,
-            "published_at": (
-                article.published_at.isoformat() if article.published_at else None
-            ),
+            "published_at": (article.published_at.isoformat() if article.published_at else None),
             "site_slug": site.slug,
             "site_name": site.name,
         },
@@ -739,7 +747,9 @@ class PublicArticlePipelineFlowView(APIView):
     authentication_classes = ()
 
     @extend_schema(
-        responses={200: OpenApiResponse(description="Public article publishing pipeline flow details")},
+        responses={
+            200: OpenApiResponse(description="Public article publishing pipeline flow details")
+        },
     )
     def get(
         self,

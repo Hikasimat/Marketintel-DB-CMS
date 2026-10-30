@@ -72,7 +72,7 @@ def test_article_pipeline_flow_authenticated():
         site=site_obj,
         provider="GOOGLE",
         status="SUBMITTED",
-        urls=[f"https://techflow.cms.local/articles/pipeline-inspect-slug"],
+        urls=["https://techflow.cms.local/articles/pipeline-inspect-slug"],
         response_code=200,
         response_body="OK",
     )

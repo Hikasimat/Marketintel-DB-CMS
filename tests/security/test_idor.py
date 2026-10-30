@@ -387,4 +387,3 @@ def test_cross_tenant_consent_access_returns_404():
         f"/api/v1/workspaces/{workspace_b.id}/sites/{site_b.id}/consent/summary/"
     )
     assert resp_summary.status_code == status.HTTP_404_NOT_FOUND
-

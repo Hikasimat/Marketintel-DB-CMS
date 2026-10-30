@@ -95,7 +95,9 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
         db_user = env.str("POSTGRES_USER", REQUIRED if is_prod else "cms")
         db_password = env.str("POSTGRES_PASSWORD", REQUIRED if is_prod else "cms")
         db_host = env.str("POSTGRES_HOST", "localhost")
-        db_port = env.int("POSTGRES_PORT", 55432 if not is_prod else 5432, min_value=1, max_value=65535)
+        db_port = env.int(
+            "POSTGRES_PORT", 55432 if not is_prod else 5432, min_value=1, max_value=65535
+        )
 
     db_conn_max_age = env.int("POSTGRES_CONN_MAX_AGE", 60, min_value=0, max_value=3600)
     db_sslmode = env.str(
@@ -124,7 +126,9 @@ def load(profile: str, environ: Mapping[str, str] | None = None) -> dict[str, An
     )
     csrf_trusted_origins = env.list(
         "CSRF_TRUSTED_ORIGINS",
-        default=[] if is_prod else ["http://localhost:8000", "http://127.0.0.1:8000", "https://*.trycloudflare.com"],
+        default=[]
+        if is_prod
+        else ["http://localhost:8000", "http://127.0.0.1:8000", "https://*.trycloudflare.com"],
         item_validator=is_http_origin,
         problem="must be a comma-separated list of scheme://host[:port] origins",
     )

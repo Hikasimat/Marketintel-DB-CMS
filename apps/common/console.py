@@ -963,7 +963,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
         return;
       }
       if (!slug) {
-        slug = name.toLowerCase().replace(/^https?:\/\//i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        slug = name.toLowerCase().replace(/^https?:\\/\\//i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       } else {
         slug = slug.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
       }
@@ -973,7 +973,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
         alert(`Site "${name}" created successfully!`);
         // If the name is a hostname or URL, auto-register it as a domain for this new site:
         if (name.includes('.') && res.data && res.data.id) {
-          const cleanHost = name.replace(/^https?:\/\//i, '').split('/')[0];
+          const cleanHost = name.replace(/^https?:\\/\\//i, '').split('/')[0];
           await apiCall('POST', `/api/v1/workspaces/${wId}/sites/${res.data.id}/domains/`, {
             hostname: cleanHost,
             is_primary: true
@@ -1124,8 +1124,7 @@ CONSOLE_HTML = """<!DOCTYPE html>
           statusBadge = '<span style="background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">✖ FAILED</span>';
           stepDiv.style.borderColor = 'rgba(239,68,68,0.4)';
           stepDiv.style.background = 'rgba(239,68,68,0.05)';
-        } else {
-          statusBadge = `<span style="background:rgba(148,163,184,0.18); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); padding:2px 8px; border-radius:4px; font-weight:600; font-size:0.72rem;">ℹ ${step.status}</span>`;
+          statusBadge = `<span style="background:rgba(148,163,184,0.18); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); padding:2px 8px; border-radius:4px; font-weight:600; font-size:0.72rem;">${step.status}</span>`;
         }
 
         let errorCallout = '';
