@@ -108,3 +108,13 @@ vine==5.1.0
     #   kombu
 wcwidth==0.9.4
     # via prompt-toolkit
+requests==2.32.3
+    # via base.in
+certifi==2024.12.14
+    # via requests
+charset-normalizer==3.4.1
+    # via requests
+idna==3.10
+    # via requests
+urllib3==2.3.0
+    # via requests
