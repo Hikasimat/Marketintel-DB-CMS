@@ -4,6 +4,7 @@ confirmation, and multi-tenant isolation.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import pytest
@@ -17,8 +18,16 @@ from apps.tenancy.models import Workspace, WorkspaceMembership, WorkspaceRole
 pytestmark = pytest.mark.django_db
 
 
+@dataclass
+class GoogleAdsSetup:
+    user: User
+    workspace: Workspace
+    other_user: User
+    other_workspace: Workspace
+
+
 @pytest.fixture
-def google_ads_setup() -> dict[str, object]:
+def google_ads_setup() -> GoogleAdsSetup:
     user = User.objects.create_user(email="adsowner@example.com", password="Password123!")
     workspace = Workspace.objects.create(name="Ads Workspace", slug="ads-workspace")
     WorkspaceMembership.objects.create(workspace=workspace, user=user, role=WorkspaceRole.OWNER)
@@ -29,19 +38,18 @@ def google_ads_setup() -> dict[str, object]:
         workspace=other_workspace, user=other_user, role=WorkspaceRole.OWNER
     )
 
-    return {
-        "user": user,
-        "workspace": workspace,
-        "other_user": other_user,
-        "other_workspace": other_workspace,
-    }
+    return GoogleAdsSetup(
+        user=user,
+        workspace=workspace,
+        other_user=other_user,
+        other_workspace=other_workspace,
+    )
 
 
-def test_google_ads_authorize_and_callback(google_ads_setup: dict[str, object]) -> None:
+def test_google_ads_authorize_and_callback(google_ads_setup: GoogleAdsSetup) -> None:
     client = APIClient()
-    user = google_ads_setup["user"]
-    workspace = google_ads_setup["workspace"]
-    assert isinstance(workspace, Workspace)
+    user = google_ads_setup.user
+    workspace = google_ads_setup.workspace
 
     client.force_authenticate(user=user)
 
@@ -75,11 +83,10 @@ def test_google_ads_authorize_and_callback(google_ads_setup: dict[str, object]) 
     assert conn.get_developer_token() == "my-dev-token"
 
 
-def test_customer_selection_and_listing(google_ads_setup: dict[str, object]) -> None:
+def test_customer_selection_and_listing(google_ads_setup: GoogleAdsSetup) -> None:
     client = APIClient()
-    user = google_ads_setup["user"]
-    workspace = google_ads_setup["workspace"]
-    assert isinstance(workspace, Workspace)
+    user = google_ads_setup.user
+    workspace = google_ads_setup.workspace
 
     conn = GoogleAdsConnection.objects.create(workspace=workspace, is_active=True)
     conn.set_credentials({"access_token": "valid-token"})
@@ -117,12 +124,11 @@ def test_customer_selection_and_listing(google_ads_setup: dict[str, object]) -> 
 
 
 def test_gaql_reporting_campaigns_adgroups_keywords(
-    google_ads_setup: dict[str, object],
+    google_ads_setup: GoogleAdsSetup,
 ) -> None:
     client = APIClient()
-    user = google_ads_setup["user"]
-    workspace = google_ads_setup["workspace"]
-    assert isinstance(workspace, Workspace)
+    user = google_ads_setup.user
+    workspace = google_ads_setup.workspace
 
     conn = GoogleAdsConnection.objects.create(
         workspace=workspace, customer_id="1234567890", is_active=True
@@ -203,12 +209,10 @@ def test_gaql_reporting_campaigns_adgroups_keywords(
         assert resp.json()["count"] == 1
 
 
-def test_mutations_confirmation_and_audit_logging(google_ads_setup: dict[str, object]) -> None:
+def test_mutations_confirmation_and_audit_logging(google_ads_setup: GoogleAdsSetup) -> None:
     client = APIClient()
-    user = google_ads_setup["user"]
-    workspace = google_ads_setup["workspace"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(user, User)
+    user = google_ads_setup.user
+    workspace = google_ads_setup.workspace
 
     conn = GoogleAdsConnection.objects.create(
         workspace=workspace, customer_id="1234567890", is_active=True
@@ -297,11 +301,10 @@ def test_mutations_confirmation_and_audit_logging(google_ads_setup: dict[str, ob
     assert logs_resp.json()["count"] == 3
 
 
-def test_multi_tenant_workspace_isolation(google_ads_setup: dict[str, object]) -> None:
+def test_multi_tenant_workspace_isolation(google_ads_setup: GoogleAdsSetup) -> None:
     client = APIClient()
-    workspace = google_ads_setup["workspace"]
-    other_user = google_ads_setup["other_user"]
-    assert isinstance(workspace, Workspace)
+    workspace = google_ads_setup.workspace
+    other_user = google_ads_setup.other_user
 
     # other_user has no membership in `workspace`
     client.force_authenticate(user=other_user)

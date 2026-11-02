@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import pytest
 from django.urls import reverse
 from rest_framework import status
@@ -15,8 +17,16 @@ from apps.tenancy.models import Workspace, WorkspaceMembership, WorkspaceRole
 pytestmark = pytest.mark.django_db
 
 
+@dataclass
+class GA4Setup:
+    user: User
+    workspace: Workspace
+    site: Site
+    config: SiteAnalyticsConfig
+
+
 @pytest.fixture
-def ga4_setup() -> dict[str, object]:
+def ga4_setup() -> GA4Setup:
     user = User.objects.create_user(email="owner@ga4test.com", password="SecurePassword123!")
     workspace = Workspace.objects.create(name="GA4 Workspace", slug="ga4-workspace")
     WorkspaceMembership.objects.create(workspace=workspace, user=user, role=WorkspaceRole.OWNER)
@@ -24,16 +34,14 @@ def ga4_setup() -> dict[str, object]:
         workspace=workspace, name="GA4 Site", slug="ga4-site", default_locale="en-US"
     )
     config = SiteAnalyticsConfig.objects.create(site=site, measurement_id="G-12345ABCDE")
-    return {"user": user, "workspace": workspace, "site": site, "config": config}
+    return GA4Setup(user=user, workspace=workspace, site=site, config=config)
 
 
-def test_gtag_snippet_generation(ga4_setup: dict[str, object]) -> None:
+def test_gtag_snippet_generation(ga4_setup: GA4Setup) -> None:
     client = APIClient()
-    user = ga4_setup["user"]
-    workspace = ga4_setup["workspace"]
-    site = ga4_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = ga4_setup.user
+    workspace = ga4_setup.workspace
+    site = ga4_setup.site
 
     client.force_authenticate(user=user)
     url = reverse(
@@ -53,13 +61,11 @@ def test_gtag_snippet_generation(ga4_setup: dict[str, object]) -> None:
     assert data["copy_button_ready"] is True
 
 
-def test_ga4_oauth_authorize_and_callback(ga4_setup: dict[str, object]) -> None:
+def test_ga4_oauth_authorize_and_callback(ga4_setup: GA4Setup) -> None:
     client = APIClient()
-    user = ga4_setup["user"]
-    workspace = ga4_setup["workspace"]
-    site = ga4_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = ga4_setup.user
+    workspace = ga4_setup.workspace
+    site = ga4_setup.site
 
     client.force_authenticate(user=user)
 
@@ -89,13 +95,11 @@ def test_ga4_oauth_authorize_and_callback(ga4_setup: dict[str, object]) -> None:
     assert creds.get("access_token") == "mock-ga4-access-token"
 
 
-def test_ga4_properties_and_select(ga4_setup: dict[str, object]) -> None:
+def test_ga4_properties_and_select(ga4_setup: GA4Setup) -> None:
     client = APIClient()
-    user = ga4_setup["user"]
-    workspace = ga4_setup["workspace"]
-    site = ga4_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = ga4_setup.user
+    workspace = ga4_setup.workspace
+    site = ga4_setup.site
 
     conn = GA4Connection.objects.create(site=site, property_id="pending")
     conn.set_credentials({"access_token": "mock-token"})
@@ -131,13 +135,11 @@ def test_ga4_properties_and_select(ga4_setup: dict[str, object]) -> None:
     assert config.measurement_id == "G-NEWMEASUREMENT"
 
 
-def test_ga4_disconnect(ga4_setup: dict[str, object]) -> None:
+def test_ga4_disconnect(ga4_setup: GA4Setup) -> None:
     client = APIClient()
-    user = ga4_setup["user"]
-    workspace = ga4_setup["workspace"]
-    site = ga4_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = ga4_setup.user
+    workspace = ga4_setup.workspace
+    site = ga4_setup.site
 
     GA4Connection.objects.create(site=site, property_id="314159")
 

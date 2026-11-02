@@ -1,1 +1,2 @@
 """Google Ads integration module."""
+

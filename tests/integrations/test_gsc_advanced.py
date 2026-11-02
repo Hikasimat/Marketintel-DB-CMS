@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import pytest
@@ -18,8 +19,15 @@ from apps.tenancy.models import Workspace, WorkspaceMembership, WorkspaceRole
 pytestmark = pytest.mark.django_db
 
 
+@dataclass
+class GSCSetup:
+    user: User
+    workspace: Workspace
+    site: Site
+
+
 @pytest.fixture
-def gsc_setup() -> dict[str, object]:
+def gsc_setup() -> GSCSetup:
     user = User.objects.create_user(email="owner@gsctest.com", password="SecurePassword123!")
     workspace = Workspace.objects.create(name="GSC Workspace", slug="gsc-workspace")
     WorkspaceMembership.objects.create(workspace=workspace, user=user, role=WorkspaceRole.OWNER)
@@ -29,16 +37,14 @@ def gsc_setup() -> dict[str, object]:
     Domain.objects.create(
         site=site, hostname="gsc-site.hikasimat.com", is_primary=True, is_verified=True
     )
-    return {"user": user, "workspace": workspace, "site": site}
+    return GSCSetup(user=user, workspace=workspace, site=site)
 
 
-def test_gsc_oauth_authorize_and_callback(gsc_setup: dict[str, object]) -> None:
+def test_gsc_oauth_authorize_and_callback(gsc_setup: GSCSetup) -> None:
     client = APIClient()
-    user = gsc_setup["user"]
-    workspace = gsc_setup["workspace"]
-    site = gsc_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = gsc_setup.user
+    workspace = gsc_setup.workspace
+    site = gsc_setup.site
 
     client.force_authenticate(user=user)
 
@@ -67,13 +73,11 @@ def test_gsc_oauth_authorize_and_callback(gsc_setup: dict[str, object]) -> None:
     assert tokens.get("access_token") == "mock-gsc-access-token"
 
 
-def test_gsc_properties_list_and_select(gsc_setup: dict[str, object]) -> None:
+def test_gsc_properties_list_and_select(gsc_setup: GSCSetup) -> None:
     client = APIClient()
-    user = gsc_setup["user"]
-    workspace = gsc_setup["workspace"]
-    site = gsc_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = gsc_setup.user
+    workspace = gsc_setup.workspace
+    site = gsc_setup.site
 
     conn = SearchEngineConnection.objects.create(
         site=site,
@@ -99,20 +103,20 @@ def test_gsc_properties_list_and_select(gsc_setup: dict[str, object]) -> None:
         "integrations:gsc_property_select",
         kwargs={"workspace_id": workspace.id, "site_id": site.id},
     )
-    sel_resp = client.post(sel_url, {"site_url": "sc-domain:gsc-site.hikasimat.com"}, format="json")
+    sel_resp = client.post(
+        sel_url, {"site_url": "sc-domain:gsc-site.hikasimat.com"}, format="json"
+    )
     assert sel_resp.status_code == status.HTTP_200_OK
 
     conn.refresh_from_db()
     assert conn.settings["selected_property"] == "sc-domain:gsc-site.hikasimat.com"
 
 
-def test_gsc_search_analytics(gsc_setup: dict[str, object]) -> None:
+def test_gsc_search_analytics(gsc_setup: GSCSetup) -> None:
     client = APIClient()
-    user = gsc_setup["user"]
-    workspace = gsc_setup["workspace"]
-    site = gsc_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = gsc_setup.user
+    workspace = gsc_setup.workspace
+    site = gsc_setup.site
 
     conn = SearchEngineConnection.objects.create(
         site=site,
@@ -153,20 +157,20 @@ def test_gsc_search_analytics(gsc_setup: dict[str, object]) -> None:
                 },
             ],
         }
-        resp = client.get(analytics_url, {"start_date": "2026-10-01", "end_date": "2026-10-28"})
+        resp = client.get(
+            analytics_url, {"start_date": "2026-10-01", "end_date": "2026-10-28"}
+        )
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["status"] == "SUCCESS"
         assert len(data["rows"]) == 2
 
 
-def test_gsc_sitemaps_management(gsc_setup: dict[str, object]) -> None:
+def test_gsc_sitemaps_management(gsc_setup: GSCSetup) -> None:
     client = APIClient()
-    user = gsc_setup["user"]
-    workspace = gsc_setup["workspace"]
-    site = gsc_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = gsc_setup.user
+    workspace = gsc_setup.workspace
+    site = gsc_setup.site
 
     conn = SearchEngineConnection.objects.create(
         site=site,
@@ -224,13 +228,11 @@ def test_gsc_sitemaps_management(gsc_setup: dict[str, object]) -> None:
         assert del_resp.status_code == status.HTTP_200_OK
 
 
-def test_gsc_disconnect(gsc_setup: dict[str, object]) -> None:
+def test_gsc_disconnect(gsc_setup: GSCSetup) -> None:
     client = APIClient()
-    user = gsc_setup["user"]
-    workspace = gsc_setup["workspace"]
-    site = gsc_setup["site"]
-    assert isinstance(workspace, Workspace)
-    assert isinstance(site, Site)
+    user = gsc_setup.user
+    workspace = gsc_setup.workspace
+    site = gsc_setup.site
 
     SearchEngineConnection.objects.create(
         site=site,
