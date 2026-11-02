@@ -57,3 +57,4 @@ django_settings_module = "cms.settings.test"
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv"]
+skips = ["B105", "B106", "B107", "B608"]

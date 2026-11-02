@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.serializers import (
     LoginSerializer,
     LogoutSerializer,
@@ -141,5 +142,8 @@ class CurrentUserView(APIView):
         responses={200: UserSerializer},
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer = UserSerializer(request.user)
+        user = request.user
+        if not isinstance(user, User):
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
