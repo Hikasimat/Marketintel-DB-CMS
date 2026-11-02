@@ -269,14 +269,15 @@ def get_consent_summary(site: Site) -> dict[str, Any]:
     categories = list(config.get_all_categories().keys())
 
     acceptance_rates: dict[str, float] = {}
+    active_categories_list = list(
+        records.exclude(status=ConsentRecordStatus.WITHDRAWN).values_list("categories", flat=True)
+    )
     for cat in categories:
         if cat == "necessary":
             acceptance_rates[cat] = 100.0
             continue
-        accepted = (
-            records.filter(categories__contains={cat: True})
-            .exclude(status=ConsentRecordStatus.WITHDRAWN)
-            .count()
+        accepted = sum(
+            1 for c in active_categories_list if isinstance(c, dict) and c.get(cat) is True
         )
         rate = round((accepted / total) * 100, 1)
         acceptance_rates[cat] = rate

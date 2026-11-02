@@ -312,3 +312,121 @@ def test_multi_tenant_workspace_isolation(google_ads_setup: GoogleAdsSetup) -> N
     url = f"/api/v1/workspaces/{workspace.id}/google-ads/authorize/"
     resp = client.get(url)
     assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_google_ads_adapter_direct_operations() -> None:
+    from unittest.mock import MagicMock
+
+    import requests
+
+    from apps.google_ads.adapters.google_ads import GoogleAdsAdapter
+
+    mock_session = MagicMock(spec=requests.Session)
+    adapter = GoogleAdsAdapter(
+        customer_id="123-456-7890",
+        access_token="test-access-token",
+        developer_token="test-dev-token",
+        manager_customer_id="999-888-7777",
+        session=mock_session,
+    )
+    assert adapter.customer_id == "1234567890"
+    assert adapter.manager_customer_id == "9998887777"
+
+    headers = adapter._get_headers()
+    assert headers["developer-token"] == "test-dev-token"
+    assert headers["login-customer-id"] == "9998887777"
+    assert "test-access-token" in headers["Authorization"]
+
+    # 1. list_accessible_customers
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"resourceNames": ["customers/111", "customers/222"]}
+    mock_session.get.return_value = mock_resp
+    customers = adapter.list_accessible_customers()
+    assert len(customers) == 2
+
+    mock_session.get.side_effect = requests.RequestException("Network down")
+    assert adapter.list_accessible_customers() == []
+    mock_session.get.side_effect = None
+
+    # 2. query
+    empty_adapter = GoogleAdsAdapter(customer_id="", access_token="tok", session=mock_session)
+    assert empty_adapter.query("SELECT 1") == []
+
+    mock_query_resp = MagicMock()
+    mock_query_resp.status_code = 200
+    mock_query_resp.json.return_value = {
+        "results": [
+            {
+                "campaign": {"id": "1001", "name": "Brand", "status": "ENABLED"},
+                "metrics": {
+                    "impressions": 100,
+                    "clicks": 10,
+                    "costMicros": 5000000,
+                    "conversions": 2.0,
+                    "ctr": 0.1,
+                    "averageCpc": 500000,
+                },
+                "campaignBudget": {"amountMicros": 10000000},
+                "adGroup": {"id": "2001", "name": "Exact", "status": "ENABLED"},
+                "adGroupCriterion": {
+                    "criterionId": "3001",
+                    "status": "ENABLED",
+                    "keyword": {"text": "intel", "matchType": "EXACT"},
+                },
+            }
+        ]
+    }
+    mock_session.post.return_value = mock_query_resp
+
+    campaigns = adapter.get_campaigns("2026-01-01", "2026-01-30")
+    assert len(campaigns) == 1
+    assert campaigns[0]["campaign_name"] == "Brand"
+
+    ad_groups = adapter.get_ad_groups("2026-01-01", "2026-01-30")
+    assert len(ad_groups) == 1
+    assert ad_groups[0]["ad_group_name"] == "Exact"
+
+    keywords = adapter.get_keywords("2026-01-01", "2026-01-30")
+    assert len(keywords) == 1
+    assert keywords[0]["keyword_text"] == "intel"
+
+    # query errors
+    mock_query_resp.status_code = 400
+    mock_query_resp.text = "Bad Request"
+    assert adapter.query("SELECT 1") == []
+
+    mock_session.post.side_effect = requests.RequestException("Query failed")
+    assert adapter.query("SELECT 1") == []
+    mock_session.post.side_effect = None
+
+    # 3. set_campaign_status
+    mock_mutate_resp = MagicMock()
+    mock_mutate_resp.status_code = 200
+    mock_session.post.return_value = mock_mutate_resp
+    res = adapter.set_campaign_status("1001", "PAUSED")
+    assert res["status"] == "SUCCESS"
+
+    mock_mutate_resp.status_code = 400
+    mock_mutate_resp.text = "Mutate failed"
+    res_err = adapter.set_campaign_status("1001", "PAUSED")
+    assert res_err["status"] == "ERROR"
+
+    mock_session.post.side_effect = requests.RequestException("Timeout")
+    res_exc = adapter.set_campaign_status("1001", "PAUSED")
+    assert res_exc["status"] == "ERROR"
+    mock_session.post.side_effect = None
+
+    # 4. update_campaign_budget
+    mock_session.post.return_value = mock_mutate_resp
+    mock_mutate_resp.status_code = 200
+    b_res = adapter.update_campaign_budget("customers/123/campaignBudgets/456", 10000000)
+    assert b_res["status"] == "SUCCESS"
+
+    mock_mutate_resp.status_code = 400
+    b_err = adapter.update_campaign_budget("customers/123/campaignBudgets/456", 10000000)
+    assert b_err["status"] == "ERROR"
+
+    mock_session.post.side_effect = requests.RequestException("Timeout")
+    b_exc = adapter.update_campaign_budget("customers/123/campaignBudgets/456", 10000000)
+    assert b_exc["status"] == "ERROR"

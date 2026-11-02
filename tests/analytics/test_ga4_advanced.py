@@ -150,3 +150,103 @@ def test_ga4_disconnect(ga4_setup: GA4Setup) -> None:
     resp = client.post(disc_url)
     assert resp.status_code == status.HTTP_200_OK
     assert not GA4Connection.objects.filter(site=site).exists()
+
+
+def test_ga4_reporting_and_admin_adapters_direct() -> None:
+    from unittest.mock import MagicMock
+
+    import requests
+
+    from apps.analytics.adapters.ga4 import GA4AdminAdapter, GA4ReportingAdapter
+
+    mock_session = MagicMock(spec=requests.Session)
+
+    # 1. GA4ReportingAdapter
+    rep_adapter = GA4ReportingAdapter(
+        property_id="properties/123456", access_token="mock-token", session=mock_session
+    )
+    assert rep_adapter.property_id == "123456"
+
+    mock_rep_resp = MagicMock()
+    mock_rep_resp.status_code = 200
+    mock_rep_resp.json.return_value = {
+        "rowCount": 1,
+        "metricHeaders": [{"name": "activeUsers"}],
+        "dimensionHeaders": [{"name": "country"}],
+        "rows": [
+            {"dimensionValues": [{"value": "United States"}], "metricValues": [{"value": "42"}]}
+        ],
+    }
+    mock_session.post.return_value = mock_rep_resp
+
+    overview = rep_adapter.get_overview("2026-01-01", "2026-01-30")
+    assert overview["status"] == "SUCCESS"
+    assert len(overview["rows"]) == 1
+
+    sources = rep_adapter.get_traffic_sources("2026-01-01", "2026-01-30")
+    assert sources["status"] == "SUCCESS"
+
+    pages = rep_adapter.get_top_pages("2026-01-01", "2026-01-30")
+    assert pages["status"] == "SUCCESS"
+
+    audience = rep_adapter.get_audience("2026-01-01", "2026-01-30")
+    assert audience["status"] == "SUCCESS"
+
+    events = rep_adapter.get_events("2026-01-01", "2026-01-30")
+    assert events["status"] == "SUCCESS"
+
+    realtime = rep_adapter.get_realtime()
+    assert realtime["status"] == "SUCCESS"
+
+    # error handling
+    mock_rep_resp.status_code = 403
+    mock_rep_resp.text = "Forbidden"
+    err = rep_adapter.run_report("2026-01-01", "2026-01-30", ["activeUsers"])
+    assert err["status"] == "ERROR"
+
+    mock_session.post.side_effect = requests.RequestException("Conn error")
+    exc_res = rep_adapter.run_report("2026-01-01", "2026-01-30", ["activeUsers"])
+    assert exc_res["status"] == "ERROR"
+    mock_session.post.side_effect = None
+
+    # 2. GA4AdminAdapter
+    admin_adapter = GA4AdminAdapter(access_token="mock-token", session=mock_session)
+    mock_admin_resp = MagicMock()
+    mock_admin_resp.status_code = 200
+    mock_admin_resp.json.return_value = {
+        "accountSummaries": [
+            {
+                "displayName": "My Account",
+                "propertySummaries": [
+                    {"property": "properties/999888", "displayName": "My Web Site"}
+                ],
+            }
+        ]
+    }
+    mock_session.get.return_value = mock_admin_resp
+    summaries = admin_adapter.list_account_summaries()
+    assert len(summaries) == 1
+    assert summaries[0]["property_id"] == "999888"
+
+    mock_streams_resp = MagicMock()
+    mock_streams_resp.status_code = 200
+    mock_streams_resp.json.return_value = {
+        "dataStreams": [
+            {
+                "displayName": "Web Stream",
+                "type": "WEB_DATA_STREAM",
+                "webStreamData": {
+                    "measurementId": "G-ADMINSTREAM",
+                    "defaultUri": "https://example.com",
+                },
+            }
+        ]
+    }
+    mock_session.get.return_value = mock_streams_resp
+    streams = admin_adapter.list_data_streams("properties/999888")
+    assert len(streams) == 1
+    assert streams[0]["measurement_id"] == "G-ADMINSTREAM"
+
+    mock_session.get.side_effect = requests.RequestException("Admin error")
+    assert admin_adapter.list_account_summaries() == []
+    assert admin_adapter.list_data_streams("999888") == []

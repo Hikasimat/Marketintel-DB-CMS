@@ -103,9 +103,7 @@ def test_gsc_properties_list_and_select(gsc_setup: GSCSetup) -> None:
         "integrations:gsc_property_select",
         kwargs={"workspace_id": workspace.id, "site_id": site.id},
     )
-    sel_resp = client.post(
-        sel_url, {"site_url": "sc-domain:gsc-site.hikasimat.com"}, format="json"
-    )
+    sel_resp = client.post(sel_url, {"site_url": "sc-domain:gsc-site.hikasimat.com"}, format="json")
     assert sel_resp.status_code == status.HTTP_200_OK
 
     conn.refresh_from_db()
@@ -157,9 +155,7 @@ def test_gsc_search_analytics(gsc_setup: GSCSetup) -> None:
                 },
             ],
         }
-        resp = client.get(
-            analytics_url, {"start_date": "2026-10-01", "end_date": "2026-10-28"}
-        )
+        resp = client.get(analytics_url, {"start_date": "2026-10-01", "end_date": "2026-10-28"})
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
         assert data["status"] == "SUCCESS"
@@ -249,3 +245,55 @@ def test_gsc_disconnect(gsc_setup: GSCSetup) -> None:
     assert not SearchEngineConnection.objects.filter(
         site=site, provider=SearchProvider.GOOGLE
     ).exists()
+
+
+def test_gsc_adapter_direct_operations() -> None:
+    from unittest.mock import MagicMock
+
+    import requests
+
+    from apps.integrations.adapters.google import GoogleSearchConsoleAdapter
+
+    mock_session = MagicMock(spec=requests.Session)
+    adapter = GoogleSearchConsoleAdapter(
+        access_token="mock-token",
+        site_url="sc-domain:example.com",
+        session=mock_session,
+    )
+
+    # list_sites
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "siteEntry": [{"siteUrl": "sc-domain:example.com", "permissionLevel": "siteOwner"}]
+    }
+    mock_session.get.return_value = mock_resp
+    sites = adapter.list_sites()
+    assert len(sites) == 1
+
+    mock_session.get.side_effect = requests.RequestException("Conn error")
+    assert adapter.list_sites() == []
+    assert adapter.list_sitemaps() == []
+    mock_session.get.side_effect = None
+
+    # query_search_analytics
+    mock_post_resp = MagicMock()
+    mock_post_resp.status_code = 200
+    mock_post_resp.json.return_value = {
+        "rows": [
+            {"keys": ["best cms"], "clicks": 10, "impressions": 100, "ctr": 0.1, "position": 2.0}
+        ]
+    }
+    mock_session.post.return_value = mock_post_resp
+
+    res = adapter.query_search_analytics("2026-01-01", "2026-01-30", dimensions=["query"])
+    assert res["status"] == "SUCCESS"
+    assert len(res["rows"]) == 1
+
+    mock_post_resp.status_code = 400
+    mock_post_resp.text = "Bad Request"
+    assert adapter.query_search_analytics("2026-01-01", "2026-01-30")["status"] == "ERROR"
+
+    mock_session.post.side_effect = requests.RequestException("Network fail")
+    assert adapter.query_search_analytics("2026-01-01", "2026-01-30")["status"] == "ERROR"
+    mock_session.post.side_effect = None

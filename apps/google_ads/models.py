@@ -107,4 +107,3 @@ class GoogleAdsCampaignAuditLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.action} on Campaign {self.campaign_id} at {self.created_at.isoformat()}"
-

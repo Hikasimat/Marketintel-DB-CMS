@@ -64,6 +64,7 @@ def verify_market_intel_token(access_token: str) -> dict[str, Any] | None:
         endpoints.append(f"{clean}/api/auth/me/" if not clean.endswith("/me/") else clean)
     endpoints.extend(
         [
+            "https://marketinteldbapp.hikasimat.com/api/auth/me/",
             "https://marketintel.hikasimat.com/api/auth/me/",
             "http://127.0.0.1:8000/api/auth/me/",
             "http://localhost:8000/api/auth/me/",
@@ -154,6 +155,7 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
         endpoints.append(raw_env_url.strip())
     endpoints.extend(
         [
+            "https://marketinteldbapp.hikasimat.com/api/auth/login/",
             "https://marketintel.hikasimat.com/api/auth/login/",
             "http://127.0.0.1:8000/api/auth/login/",
             "http://localhost:8000/api/auth/login/",
