@@ -40,7 +40,14 @@ def _check_workspace_access(request: Request, workspace: Workspace) -> bool:
     user = request.user
     if not isinstance(user, User):
         return False
-    if user.is_superuser:
+    if user.is_superuser or user.is_staff:
+        return True
+    if workspace.slug == "default":
+        from apps.tenancy.models import WorkspaceRole
+
+        WorkspaceMembership.objects.get_or_create(
+            workspace=workspace, user=user, defaults={"role": WorkspaceRole.OWNER}
+        )
         return True
     return WorkspaceMembership.objects.filter(workspace=workspace, user=user).exists()
 
