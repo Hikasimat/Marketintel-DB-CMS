@@ -24,6 +24,14 @@ def resolve_workspace(request: Request, view: APIView) -> Workspace:
 
     workspace_id = view.kwargs.get("workspace_id") or request.headers.get("X-Workspace-ID")
     if not workspace_id:
+        user = request.user
+        if user and user.is_authenticated:
+            membership = (
+                WorkspaceMembership.objects.filter(user=user).select_related("workspace").first()
+            )
+            if membership:
+                request.workspace = membership.workspace
+                return membership.workspace
         raise NotFound("Workspace not specified.")
 
     if isinstance(workspace_id, uuid.UUID):

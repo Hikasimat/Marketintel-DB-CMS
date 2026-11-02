@@ -113,6 +113,9 @@ class GA4AuthorizeView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Google OAuth 2.0 authorization URL")}
+    )
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -159,6 +162,10 @@ class GA4CallbackView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=GA4CallbackSerializer,
+        responses={200: OpenApiResponse(description="Callback response")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -234,6 +241,10 @@ class GA4DisconnectView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(description="GA4 connection revoked and deleted")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -276,6 +287,9 @@ class GA4PropertiesListView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceMember)
 
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Accessible GA4 accounts and properties")}
+    )
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -318,6 +332,10 @@ class GA4PropertySelectView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=GA4PropertySelectSerializer,
+        responses={200: OpenApiResponse(description="Property select status")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)

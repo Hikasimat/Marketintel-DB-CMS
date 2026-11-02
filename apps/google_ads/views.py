@@ -10,6 +10,7 @@ from typing import ClassVar
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -63,6 +64,7 @@ class GoogleAdsConnectionDetailView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(responses={200: OpenApiResponse(description="Connection status")})
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -82,6 +84,10 @@ class GoogleAdsAuthorizeView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        parameters=[GoogleAdsAuthorizeSerializer],
+        responses={200: OpenApiResponse(description="Google Ads OAuth authorization URL")},
+    )
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -122,6 +128,10 @@ class GoogleAdsCallbackView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=GoogleAdsCallbackSerializer,
+        responses={200: GoogleAdsConnectionSerializer},
+    )
     def post(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -211,6 +221,10 @@ class GoogleAdsDisconnectView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(description="Google Ads connection severed")},
+    )
     def post(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -235,6 +249,7 @@ class GoogleAdsCustomerListView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(responses={200: OpenApiResponse(description="Accessible Google Ads customers")})
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -261,6 +276,10 @@ class GoogleAdsCustomerSelectView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=GoogleAdsCustomerSelectSerializer,
+        responses={200: OpenApiResponse(description="Customer account selected")},
+    )
     def post(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -307,6 +326,10 @@ class GoogleAdsCampaignsView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        parameters=[GoogleAdsDateRangeSerializer],
+        responses={200: OpenApiResponse(description="Google Ads campaigns performance metrics")},
+    )
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -345,6 +368,10 @@ class GoogleAdsAdGroupsView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        parameters=[GoogleAdsDateRangeSerializer],
+        responses={200: OpenApiResponse(description="Google Ads ad groups performance metrics")},
+    )
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -383,6 +410,10 @@ class GoogleAdsKeywordsView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        parameters=[GoogleAdsDateRangeSerializer],
+        responses={200: OpenApiResponse(description="Google Ads keywords performance metrics")},
+    )
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -421,6 +452,10 @@ class GoogleAdsCampaignPauseView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=GoogleAdsCampaignActionSerializer,
+        responses={200: OpenApiResponse(description="Campaign paused successfully")},
+    )
     def post(self, request: Request, workspace_id: str, campaign_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -468,6 +503,10 @@ class GoogleAdsCampaignResumeView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=GoogleAdsCampaignActionSerializer,
+        responses={200: OpenApiResponse(description="Campaign resumed successfully")},
+    )
     def post(self, request: Request, workspace_id: str, campaign_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -515,6 +554,10 @@ class GoogleAdsCampaignBudgetView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(
+        request=GoogleAdsBudgetUpdateSerializer,
+        responses={200: OpenApiResponse(description="Campaign budget updated successfully")},
+    )
     def post(self, request: Request, workspace_id: str, campaign_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):
@@ -575,6 +618,7 @@ class GoogleAdsAuditLogListView(APIView):
         permissions.IsAuthenticated
     ]
 
+    @extend_schema(responses={200: GoogleAdsCampaignAuditLogSerializer(many=True)})
     def get(self, request: Request, workspace_id: str) -> Response:
         workspace = get_object_or_404(Workspace, id=workspace_id)
         if not _check_workspace_access(request, workspace):

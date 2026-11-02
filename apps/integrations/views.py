@@ -101,6 +101,7 @@ class GoogleSearchConsoleAuthorizeView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(responses={200: OpenApiResponse(description="GSC authorization URL")})
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -147,6 +148,10 @@ class GoogleSearchConsoleCallbackView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=GoogleSearchConsoleCallbackSerializer,
+        responses={200: OpenApiResponse(description="Callback response")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -222,6 +227,10 @@ class GoogleSearchConsoleDisconnectView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(description="GSC disconnected successfully")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -262,6 +271,7 @@ class GoogleSearchConsolePropertiesView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceMember)
 
+    @extend_schema(responses={200: OpenApiResponse(description="Accessible properties")})
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -298,6 +308,10 @@ class GoogleSearchConsolePropertySelectView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceAdmin)
 
+    @extend_schema(
+        request=GoogleSearchConsolePropertySelectSerializer,
+        responses={200: OpenApiResponse(description="Property select status")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -332,6 +346,10 @@ class GoogleSearchConsoleAnalyticsView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceMember)
 
+    @extend_schema(
+        parameters=[GoogleSearchConsoleAnalyticsRequestSerializer],
+        responses={200: OpenApiResponse(description="Analytics performance data")},
+    )
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -371,6 +389,7 @@ class GoogleSearchConsoleSitemapsView(APIView):
 
     permission_classes = (permissions.IsAuthenticated, IsWorkspaceMember)
 
+    @extend_schema(responses={200: OpenApiResponse(description="Sitemaps list")})
     def get(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -388,6 +407,10 @@ class GoogleSearchConsoleSitemapsView(APIView):
         sitemaps = adapter.list_sitemaps()
         return Response({"sitemaps": sitemaps})
 
+    @extend_schema(
+        request=GoogleSearchConsoleSitemapSubmitSerializer,
+        responses={200: OpenApiResponse(description="Sitemap submit status")},
+    )
     def post(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -409,6 +432,7 @@ class GoogleSearchConsoleSitemapsView(APIView):
         result = adapter.submit_sitemap(sitemap_url)
         return Response(result)
 
+    @extend_schema(responses={204: OpenApiResponse(description="Sitemap deleted")})
     def delete(self, request: Request, workspace_id: Any, site_id: Any) -> Response:
         workspace = resolve_workspace(request, workspace_id)
         site = _get_site(workspace, site_id)
@@ -559,6 +583,8 @@ class SearchConnectionDetailView(APIView):
 
 class IndexNowKeyView(APIView):
     """Retrieve, generate, or rotate an IndexNow key for a site."""
+
+    serializer_class = IndexNowKeySerializer
 
     def get_permissions(self) -> list[Any]:
         if self.request.method == "GET":

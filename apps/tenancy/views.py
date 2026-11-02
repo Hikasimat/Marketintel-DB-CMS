@@ -48,6 +48,20 @@ class WorkspaceListCreateView(APIView):
             .select_related("workspace")
             .order_by("workspace__name")
         )
+        if not memberships.exists():
+            workspace = Workspace.objects.first()
+            if not workspace:
+                workspace = Workspace.objects.create(name="Default Workspace", slug="default")
+            WorkspaceMembership.objects.get_or_create(
+                workspace=workspace,
+                user=user,
+                defaults={"role": WorkspaceRole.OWNER if user.is_staff else WorkspaceRole.EDITOR},
+            )
+            memberships = (
+                WorkspaceMembership.objects.filter(user=user)
+                .select_related("workspace")
+                .order_by("workspace__name")
+            )
         workspaces = [m.workspace for m in memberships]
         serializer = WorkspaceSerializer(workspaces, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

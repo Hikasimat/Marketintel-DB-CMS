@@ -15,6 +15,11 @@ app_name = "accounts"
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
     path(
+        "auth/exchange/",
+        MarketIntelTokenExchangeView.as_view(),
+        name="marketintel_exchange_alias",
+    ),
+    path(
         "auth/marketintel/exchange/",
         MarketIntelTokenExchangeView.as_view(),
         name="marketintel_exchange",

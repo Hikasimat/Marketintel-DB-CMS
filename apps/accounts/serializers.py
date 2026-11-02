@@ -64,8 +64,8 @@ def verify_market_intel_token(access_token: str) -> dict[str, Any] | None:
         endpoints.append(f"{clean}/api/auth/me/" if not clean.endswith("/me/") else clean)
     endpoints.extend(
         [
-            "https://marketinteldbapp.hikasimat.com/api/auth/me/",
             "https://marketintel.hikasimat.com/api/auth/me/",
+            "https://marketinteldbapp.hikasimat.com/api/auth/me/",
             "http://127.0.0.1:8000/api/auth/me/",
             "http://localhost:8000/api/auth/me/",
         ]
@@ -86,7 +86,14 @@ def verify_market_intel_token(access_token: str) -> dict[str, Any] | None:
             )
             with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310 # noqa: S310
                 if resp.status == 200:
-                    data = json.loads(resp.read().decode())
+                    raw_body = resp.read().decode()
+                    try:
+                        data = json.loads(raw_body)
+                    except Exception as json_err:
+                        logger.debug("Non-JSON response from endpoint %s: %s", endpoint, json_err)
+                        continue
+                    if not isinstance(data, dict):
+                        continue
                     if data.get("is_active", True) is False:
                         logger.warning("Market Intel account %s is inactive.", data.get("email"))
                         return None
@@ -98,14 +105,16 @@ def verify_market_intel_token(access_token: str) -> dict[str, Any] | None:
                         "first_name": data.get("first_name", ""),
                         "last_name": data.get("last_name", ""),
                     }
+                    if not result["email"]:
+                        continue
                     cache.set(cache_key, result, timeout=60)
                     return result
         except urllib.error.HTTPError as exc:
-            if exc.code in (401, 403):
-                logger.debug("Market Intel rejected token: %s", exc)
-                return None
+            logger.debug("Market Intel endpoint %s returned HTTP %s: %s", endpoint, exc.code, exc)
+            continue
         except Exception as exc:
             logger.debug("Could not reach Market Intel me endpoint %s: %s", endpoint, exc)
+            continue
 
     return None
 
@@ -155,8 +164,8 @@ def _verify_with_market_intel_endpoint(identifier: str, password: str) -> dict[s
         endpoints.append(raw_env_url.strip())
     endpoints.extend(
         [
-            "https://marketinteldbapp.hikasimat.com/api/auth/login/",
             "https://marketintel.hikasimat.com/api/auth/login/",
+            "https://marketinteldbapp.hikasimat.com/api/auth/login/",
             "http://127.0.0.1:8000/api/auth/login/",
             "http://localhost:8000/api/auth/login/",
         ]
