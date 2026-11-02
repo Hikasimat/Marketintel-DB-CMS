@@ -6,15 +6,14 @@ from typing import Any
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import User
 from apps.accounts.serializers import (
     LoginSerializer,
     LogoutSerializer,
+    MarketIntelTokenExchangeSerializer,
     TokenRefreshSerializer,
     UserSerializer,
 )
@@ -29,7 +28,7 @@ from apps.common.jwt import TokenExpiredError, TokenInvalidError
 
 
 class LoginView(APIView):
-    """Authenticate via email/password and obtain access + refresh tokens."""
+    """Authenticate via email/password or Market Intel token and obtain access + refresh tokens."""
 
     permission_classes = (permissions.AllowAny,)
     authentication_classes = ()
@@ -43,6 +42,30 @@ class LoginView(APIView):
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+
+        token_data = create_token_pair(user)
+        return Response(token_data, status=status.HTTP_200_OK)
+
+
+class MarketIntelTokenExchangeView(APIView):
+    """Exchange a verified Market Intel access token for internal CMS access & refresh tokens."""
+
+    permission_classes = (permissions.AllowAny,)
+    authentication_classes = ()
+
+    @extend_schema(
+        request=MarketIntelTokenExchangeSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Tokens successfully issued from Market Intel identity"
+            ),
+            400: OpenApiResponse(description="Invalid or expired Market Intel token"),
+        },
+    )
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = MarketIntelTokenExchangeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
@@ -118,8 +141,5 @@ class CurrentUserView(APIView):
         responses={200: UserSerializer},
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        user = request.user
-        if not isinstance(user, User):
-            raise AuthenticationFailed("User not authenticated.")
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)

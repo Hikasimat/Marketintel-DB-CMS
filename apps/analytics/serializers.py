@@ -111,6 +111,29 @@ class GA4ConnectionSerializer(serializers.ModelSerializer[GA4Connection]):
         return instance
 
 
+class GoogleTagSnippetSerializer(serializers.Serializer[Any]):
+    """Output serializer for Google Tag (gtag.js) snippet with Consent Mode v2."""
+
+    measurement_id = serializers.CharField()
+    tag_snippet = serializers.CharField()
+    consent_mode_v2_defaults = serializers.DictField()
+    copy_button_ready = serializers.BooleanField(default=True)
+
+
+class GA4CallbackSerializer(serializers.Serializer[Any]):
+    """Serializer for OAuth callback receiving code and state."""
+
+    code = serializers.CharField()
+    state = serializers.CharField()
+
+
+class GA4PropertySelectSerializer(serializers.Serializer[Any]):
+    """Serializer for selecting a discovered GA4 property and data stream."""
+
+    property_id = serializers.CharField()
+    measurement_id = serializers.CharField(required=False, allow_blank=True)
+
+
 class EventIngestSerializer(serializers.Serializer[Any]):
     """Serializer for public first-party event ingestion (ANA-4, ANA-6)."""
 
@@ -128,7 +151,17 @@ class GA4ReportRequestSerializer(serializers.Serializer[Any]):
     """Query parameter serializer for GA4 Data API reports (ANA-3)."""
 
     report_type = serializers.ChoiceField(
-        choices=["overview", "traffic_sources", "top_pages"], default="overview"
+        choices=[
+            "overview",
+            "acquisition",
+            "pages",
+            "audience",
+            "events",
+            "realtime",
+            "traffic_sources",
+            "top_pages",
+        ],
+        default="overview",
     )
     start_date = serializers.DateField(required=False)
     end_date = serializers.DateField(required=False)

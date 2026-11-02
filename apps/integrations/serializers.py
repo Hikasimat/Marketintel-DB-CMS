@@ -71,6 +71,44 @@ class SearchEngineConnectionSerializer(serializers.ModelSerializer[SearchEngineC
         return instance
 
 
+class GoogleSearchConsoleCallbackSerializer(serializers.Serializer[Any]):
+    """Serializer for OAuth callback receiving code and state."""
+
+    code = serializers.CharField()
+    state = serializers.CharField()
+
+
+class GoogleSearchConsolePropertySelectSerializer(serializers.Serializer[Any]):
+    """Serializer for associating a GSC siteUrl (domain or prefix property) with a CMS site."""
+
+    site_url = serializers.CharField(
+        help_text="Search Console property identifier (e.g. sc-domain:example.com or https://example.com/)."
+    )
+
+
+class GoogleSearchConsoleAnalyticsRequestSerializer(serializers.Serializer[Any]):
+    """Query parameter serializer for Search Analytics performance reporting."""
+
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
+    dimensions = serializers.ListField(
+        child=serializers.ChoiceField(choices=["query", "page", "country", "device", "date"]),
+        required=False,
+        default=list,
+    )
+    row_limit = serializers.IntegerField(required=False, default=1000, min_value=1, max_value=25000)
+    search_type = serializers.ChoiceField(
+        choices=["web", "image", "video", "news", "discover", "googleNews"],
+        default="web",
+    )
+
+
+class GoogleSearchConsoleSitemapSubmitSerializer(serializers.Serializer[Any]):
+    """Serializer for submitting or deleting a sitemap in Google Search Console."""
+
+    sitemap_url = serializers.URLField()
+
+
 class IndexNowKeySerializer(serializers.ModelSerializer[IndexNowKey]):
     """Serializer for IndexNow key hosted verification file."""
 

@@ -11,6 +11,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 
 from apps.accounts.models import User
+from apps.accounts.serializers import _ensure_workspace_enrollment, verify_market_intel_token
 from apps.common.jwt import (
     TokenExpiredError,
     TokenInvalidError,
@@ -81,8 +82,8 @@ class JWTAuthentication(authentication.BaseAuthentication):
 class ExternalIssuerAuthentication(authentication.BaseAuthentication):
     """Validates external IdP tokens (AUTH-5 boundary adapter).
 
-    Decoupled from internal models of external providers. Configured via
-    EXTERNAL_AUTH_ISSUERS dictionary in settings.
+    Decoupled from internal models of external providers. Validates both
+    configured static JWT external issuers and Market Intel federated identity tokens.
     """
 
     keyword = "Bearer"
@@ -97,40 +98,60 @@ class ExternalIssuerAuthentication(authentication.BaseAuthentication):
             return None
 
         raw_token = parts[1]
+
+        # 1. Inspect configured static/asymmetric external issuers
         external_issuers = getattr(settings, "EXTERNAL_AUTH_ISSUERS", {})
-        if not external_issuers:
-            return None
+        if external_issuers:
+            for _iss_name, config in external_issuers.items():
+                secret = config.get("secret")
+                if not secret:
+                    continue
+                expected_issuer = config.get("issuer")
+                expected_audience = config.get("audience")
 
-        # Inspect unverified header to see issuer or try configured issuers
-        for _iss_name, config in external_issuers.items():
-            secret = config.get("secret")
-            if not secret:
-                continue
-            expected_issuer = config.get("issuer")
-            expected_audience = config.get("audience")
+                try:
+                    payload = decode_jwt(
+                        raw_token,
+                        secret=secret,
+                        issuer=expected_issuer,
+                        audience=expected_audience,
+                    )
+                except (TokenExpiredError, TokenInvalidError):
+                    continue
 
-            try:
-                payload = decode_jwt(
-                    raw_token,
-                    secret=secret,
-                    issuer=expected_issuer,
-                    audience=expected_audience,
+                email = payload.get("email")
+                if not email:
+                    raise AuthenticationFailed(
+                        {"code": "external_auth_error", "message": "External token missing email."}
+                    )
+
+                # Resolve or provision local shadow user without MarketIntel DB coupling
+                user, _ = User.objects.get_or_create(
+                    email=email.lower(),
+                    defaults={"is_active": True},
                 )
-            except (TokenExpiredError, TokenInvalidError):
-                continue
+                return (user, payload)
 
-            email = payload.get("email")
-            if not email:
-                raise AuthenticationFailed(
-                    {"code": "external_auth_error", "message": "External token missing email."}
+        # 2. Market Intel federated token introspection
+        market_intel_user = verify_market_intel_token(raw_token)
+        if market_intel_user:
+            resolved_email = market_intel_user.get("email")
+            if resolved_email:
+                is_super = market_intel_user.get("is_superuser", False)
+                role = market_intel_user.get("role", "PRE")
+                is_staff = is_super or role in ("ADM", "MANAGER")
+
+                user, _ = User.objects.get_or_create(
+                    email=resolved_email.lower().strip(),
+                    defaults={"is_active": True, "is_staff": is_staff},
                 )
+                if not user.is_active or user.is_staff != is_staff:
+                    user.is_active = True
+                    user.is_staff = is_staff
+                    user.save(update_fields=["is_active", "is_staff"])
 
-            # Resolve or provision local shadow user without MarketIntel DB coupling
-            user, _ = User.objects.get_or_create(
-                email=email.lower(),
-                defaults={"is_active": True},
-            )
-            return (user, payload)
+                _ensure_workspace_enrollment(user, market_intel_user)
+                return (user, {"sub": str(user.id), "email": user.email, "issuer": "marketintel"})
 
         return None
 

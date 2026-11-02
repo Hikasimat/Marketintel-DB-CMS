@@ -7,7 +7,8 @@ paths:
   /api/v1/auth/login/:
     post:
       operationId: auth_login_create
-      description: Authenticate via email/password and obtain access + refresh tokens.
+      description: Authenticate via email/password or Market Intel token and obtain
+        access + refresh tokens.
       tags:
       - auth
       requestBody:
@@ -15,7 +16,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
-        required: true
       security:
       - {}
       responses:
@@ -43,6 +43,26 @@ paths:
           description: Session terminated
         '400':
           description: Invalid token payload
+  /api/v1/auth/marketintel/exchange/:
+    post:
+      operationId: auth_marketintel_exchange_create
+      description: Exchange a verified Market Intel access token for internal CMS
+        access & refresh tokens.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketIntelTokenExchangeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: Tokens successfully issued from Market Intel identity
+        '400':
+          description: Invalid or expired Market Intel token
   /api/v1/auth/me/:
     get:
       operationId: auth_me_retrieve
@@ -136,65 +156,9 @@ paths:
           description: ''
         '404':
           description: Site not found
-  /api/v1/public/sites/{site_slug}/analytics-config/:
-    get:
-      operationId: public_sites_analytics_config_retrieve_2
-      description: Public endpoint providing safe, non-secret analytics IDs for browser
-        loaders (ANA-1).
-      summary: Public analytics client configuration
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicAnalyticsConfig'
-          description: ''
-        '404':
-          description: Site not found
   /api/v1/public/sites/{site_slug}/analytics/events:
     post:
       operationId: public_sites_analytics_events_create
-      description: Ingest privacy-preserving first-party analytics events (ANA-4,
-        ANA-5, ANA-6).
-      summary: Ingest first-party event
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventIngestRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '202':
-          description: Event accepted
-        '400':
-          description: Invalid event
-  /api/v1/public/sites/{site_slug}/analytics/events/:
-    post:
-      operationId: public_sites_analytics_events_create_2
       description: Ingest privacy-preserving first-party analytics events (ANA-4,
         ANA-5, ANA-6).
       summary: Ingest first-party event
@@ -286,6 +250,28 @@ paths:
           description: ''
         '404':
           description: Article not found
+  /api/v1/public/sites/{site_slug}/articles/{article_slug}/pipeline-flow/:
+    get:
+      operationId: public_sites_articles_pipeline_flow_retrieve
+      description: Public read-only pipeline flow inspection for QA and monitoring.
+      parameters:
+      - in: path
+        name: article_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: site_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - public
+      security:
+      - {}
+      responses:
+        '200':
+          description: Public article publishing pipeline flow details
   /api/v1/public/sites/{site_slug}/articles/{article_slug}/seo/:
     get:
       operationId: public_sites_articles_seo_retrieve
@@ -348,67 +334,9 @@ paths:
           description: Invalid category payload or format
         '404':
           description: Site not found
-  /api/v1/public/sites/{site_slug}/consent/:
-    post:
-      operationId: public_sites_consent_create_2
-      description: Public endpoint for visitors recording their consent decision (CON-3,
-        CON-5).
-      summary: Submit visitor consent decision
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublicConsentSubmitRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '201':
-          description: Consent recorded
-        '400':
-          description: Invalid category payload or format
-        '404':
-          description: Site not found
   /api/v1/public/sites/{site_slug}/consent-config:
     get:
       operationId: public_sites_consent_config_retrieve
-      description: Public browser contract returning active consent rules and category
-        definitions (CON-2).
-      summary: Get public consent banner configuration
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicBannerConfig'
-          description: ''
-        '404':
-          description: Site not found
-  /api/v1/public/sites/{site_slug}/consent-config/:
-    get:
-      operationId: public_sites_consent_config_retrieve_2
       description: Public browser contract returning active consent rules and category
         definitions (CON-2).
       summary: Get public consent banner configuration
@@ -460,63 +388,9 @@ paths:
           description: ''
         '404':
           description: Site not found
-  /api/v1/public/sites/{site_slug}/consent/banner-config/:
-    get:
-      operationId: public_sites_consent_banner_config_retrieve_2
-      description: Public browser contract returning active consent rules and category
-        definitions (CON-2).
-      summary: Get public consent banner configuration
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicBannerConfig'
-          description: ''
-        '404':
-          description: Site not found
   /api/v1/public/sites/{site_slug}/consent/status:
     get:
       operationId: public_sites_consent_status_retrieve
-      description: Public endpoint for checking effective visitor consent status (CON-2,
-        CON-4).
-      summary: Query visitor consent status
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicConsentStatus'
-          description: ''
-        '404':
-          description: Site not found
-  /api/v1/public/sites/{site_slug}/consent/status/:
-    get:
-      operationId: public_sites_consent_status_retrieve_2
       description: Public endpoint for checking effective visitor consent status (CON-2,
         CON-4).
       summary: Query visitor consent status
@@ -569,66 +443,9 @@ paths:
           description: Consent withdrawn
         '404':
           description: Site not found
-  /api/v1/public/sites/{site_slug}/consent/withdraw/:
-    post:
-      operationId: public_sites_consent_withdraw_create_2
-      description: Public endpoint for visitors withdrawing consent (CON-4).
-      summary: Withdraw visitor consent
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublicConsentWithdrawRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '200':
-          description: Consent withdrawn
-        '404':
-          description: Site not found
   /api/v1/public/sites/{site_slug}/events:
     post:
       operationId: public_sites_events_create
-      description: Ingest privacy-preserving first-party analytics events (ANA-4,
-        ANA-5, ANA-6).
-      summary: Ingest first-party event
-      parameters:
-      - in: path
-        name: site_slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - public
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventIngestRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - externalBearerAuth: []
-      - {}
-      responses:
-        '202':
-          description: Event accepted
-        '400':
-          description: Invalid event
-  /api/v1/public/sites/{site_slug}/events/:
-    post:
-      operationId: public_sites_events_create_2
       description: Ingest privacy-preserving first-party analytics events (ANA-4,
         ANA-5, ANA-6).
       summary: Ingest first-party event
@@ -840,6 +657,255 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAuditEventList'
           description: ''
+  /api/v1/workspaces/{workspace_id}/google-ads/ad-groups/:
+    get:
+      operationId: workspaces_google_ads_ad_groups_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/audit-logs/:
+    get:
+      operationId: workspaces_google_ads_audit_logs_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/authorize/:
+    get:
+      operationId: workspaces_google_ads_authorize_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/callback/:
+    post:
+      operationId: workspaces_google_ads_callback_create
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/campaigns/:
+    get:
+      operationId: workspaces_google_ads_campaigns_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/campaigns/{campaign_id}/budget/:
+    post:
+      operationId: workspaces_google_ads_campaigns_budget_create
+      parameters:
+      - in: path
+        name: campaign_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/campaigns/{campaign_id}/pause/:
+    post:
+      operationId: workspaces_google_ads_campaigns_pause_create
+      parameters:
+      - in: path
+        name: campaign_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/campaigns/{campaign_id}/resume/:
+    post:
+      operationId: workspaces_google_ads_campaigns_resume_create
+      parameters:
+      - in: path
+        name: campaign_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/connection/:
+    get:
+      operationId: workspaces_google_ads_connection_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/customers/:
+    get:
+      operationId: workspaces_google_ads_customers_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/customers/select/:
+    post:
+      operationId: workspaces_google_ads_customers_select_create
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/disconnect/:
+    post:
+      operationId: workspaces_google_ads_disconnect_create
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/google-ads/keywords/:
+    get:
+      operationId: workspaces_google_ads_keywords_retrieve
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/workspaces/{workspace_id}/media/:
     get:
       operationId: workspaces_media_list
@@ -1228,9 +1294,8 @@ paths:
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/first-party/overview/:
     get:
       operationId: workspaces_sites_analytics_first_party_overview_retrieve
-      description: Retrieve aggregated first-party analytics metrics and time-series
-        (ANA-7).
-      summary: Get first-party analytics overview
+      description: Aggregated first-party analytics overview report (ANA-7).
+      summary: First-party analytics summary
       parameters:
       - in: path
         name: site_id
@@ -1251,13 +1316,13 @@ paths:
       - externalBearerAuth: []
       responses:
         '200':
-          description: Aggregated metrics summary
+          description: First-party metrics
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/first-party/visitors/{visitor_id}/:
     delete:
       operationId: workspaces_sites_analytics_first_party_visitors_destroy
-      description: Erase all event records for a pseudonymous visitor ID (GDPR Art.
-        17 right to erasure).
-      summary: Erase visitor analytics events
+      description: GDPR/CCPA Art. 17 right-to-be-forgotten visitor data erasure endpoint
+        (ANA-8).
+      summary: Erase visitor data (GDPR/CCPA)
       parameters:
       - in: path
         name: site_id
@@ -1283,7 +1348,7 @@ paths:
       - externalBearerAuth: []
       responses:
         '200':
-          description: Erasure result
+          description: Visitor events purged
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/ga4/:
     get:
       operationId: workspaces_sites_analytics_ga4_retrieve
@@ -1385,6 +1450,132 @@ paths:
       responses:
         '204':
           description: Disconnected
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/google/authorize/:
+    get:
+      operationId: workspaces_sites_analytics_google_authorize_retrieve
+      description: Generate Google OAuth 2.0 authorization URL for GA4 Data & Admin
+        API.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/google/callback/:
+    post:
+      operationId: workspaces_sites_analytics_google_callback_create
+      description: Handle Google OAuth 2.0 callback and exchange code for tokens.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/google/disconnect/:
+    post:
+      operationId: workspaces_sites_analytics_google_disconnect_create
+      description: Disconnect and revoke GA4 authorization.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/properties/:
+    get:
+      operationId: workspaces_sites_analytics_properties_retrieve
+      description: List accessible GA4 accounts, properties, and data streams.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/properties/select/:
+    post:
+      operationId: workspaces_sites_analytics_properties_select_create
+      description: Save selected property ID and measurement ID for site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/reports/ga4/:
     get:
       operationId: workspaces_sites_analytics_reports_ga4_retrieve
@@ -1401,6 +1592,11 @@ paths:
         schema:
           enum:
           - overview
+          - acquisition
+          - pages
+          - audience
+          - events
+          - realtime
           - traffic_sources
           - top_pages
           type: string
@@ -1408,6 +1604,11 @@ paths:
           minLength: 1
         description: |-
           * `overview` - overview
+          * `acquisition` - acquisition
+          * `pages` - pages
+          * `audience` - audience
+          * `events` - events
+          * `realtime` - realtime
           * `traffic_sources` - traffic_sources
           * `top_pages` - top_pages
       - in: path
@@ -1440,6 +1641,37 @@ paths:
       responses:
         '200':
           description: GA4 report results
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/analytics/tag/:
+    get:
+      operationId: workspaces_sites_analytics_tag_retrieve
+      description: Generate official Google tag (gtag.js) snippet with Consent Mode
+        v2 defaults.
+      summary: Generate Google Tag (gtag.js) snippet with Consent Mode v2
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleTagSnippet'
+          description: ''
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/:
     get:
       operationId: workspaces_sites_articles_list
@@ -1623,6 +1855,38 @@ paths:
       responses:
         '204':
           description: Article deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/pipeline-flow/:
+    get:
+      operationId: workspaces_sites_articles_pipeline_flow_retrieve
+      description: Inspect the end-to-end publishing pipeline flow and health for
+        an article (management).
+      parameters:
+      - in: path
+        name: article_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: Publishing pipeline flow details
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/articles/{article_id}/publish/:
     post:
       operationId: workspaces_sites_articles_publish_create
@@ -2433,7 +2697,7 @@ paths:
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/connections/{connection_id}/:
     get:
       operationId: workspaces_sites_integrations_connections_retrieve
-      description: Retrieve, update, or remove a specific search engine connection.
+      description: Retrieve or delete a search engine connection.
       summary: Get search connection details
       parameters:
       - in: path
@@ -2466,11 +2730,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/SearchEngineConnection'
           description: ''
-        '404':
-          description: Not found
     patch:
       operationId: workspaces_sites_integrations_connections_partial_update
-      description: Retrieve, update, or remove a specific search engine connection.
+      description: Retrieve or delete a search engine connection.
       summary: Update search engine connection
       parameters:
       - in: path
@@ -2508,11 +2770,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/SearchEngineConnection'
           description: ''
-        '400':
-          description: Invalid data
     delete:
       operationId: workspaces_sites_integrations_connections_destroy
-      description: Retrieve, update, or remove a specific search engine connection.
+      description: Retrieve or delete a search engine connection.
       summary: Delete search engine connection
       parameters:
       - in: path
@@ -2541,11 +2801,238 @@ paths:
       responses:
         '204':
           description: Deleted
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/authorize/:
+    get:
+      operationId: workspaces_sites_integrations_google_authorize_retrieve
+      description: Generate Google OAuth 2.0 authorization URL for Google Search Console.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/callback/:
+    post:
+      operationId: workspaces_sites_integrations_google_callback_create
+      description: Handle Search Console OAuth 2.0 callback and exchange code for
+        tokens.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/disconnect/:
+    post:
+      operationId: workspaces_sites_integrations_google_disconnect_create
+      description: Disconnect and revoke Google Search Console connection.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/properties/:
+    get:
+      operationId: workspaces_sites_integrations_google_properties_retrieve
+      description: List verified and accessible Search Console properties (domain
+        and URL-prefix).
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/properties/select/:
+    post:
+      operationId: workspaces_sites_integrations_google_properties_select_create
+      description: Select the active Search Console property to associate with this
+        site.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/search-analytics/:
+    get:
+      operationId: workspaces_sites_integrations_google_search_analytics_retrieve
+      description: Query Search Analytics performance report (clicks, impressions,
+        CTR, position).
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/google/sitemaps/:
+    get:
+      operationId: workspaces_sites_integrations_google_sitemaps_retrieve
+      description: List, submit, or delete sitemaps in Google Search Console.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: workspaces_sites_integrations_google_sitemaps_create
+      description: List, submit, or delete sitemaps in Google Search Console.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: workspaces_sites_integrations_google_sitemaps_destroy
+      description: List, submit, or delete sitemaps in Google Search Console.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workspaces
+      security:
+      - jwtAuth: []
+      - externalBearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/indexnow/:
     get:
       operationId: workspaces_sites_integrations_indexnow_retrieve
-      description: Retrieve or generate IndexNow verification key for site.
-      summary: Get or generate IndexNow key for site
+      description: Retrieve, generate, or rotate an IndexNow key for a site.
+      summary: Get active IndexNow key for site
       parameters:
       - in: path
         name: site_id
@@ -2573,7 +3060,7 @@ paths:
           description: ''
     post:
       operationId: workspaces_sites_integrations_indexnow_create
-      description: Retrieve or generate IndexNow verification key for site.
+      description: Retrieve, generate, or rotate an IndexNow key for a site.
       summary: Rotate IndexNow key for site
       parameters:
       - in: path
@@ -2603,8 +3090,8 @@ paths:
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/indexnow/rotate/:
     get:
       operationId: workspaces_sites_integrations_indexnow_rotate_retrieve
-      description: Retrieve or generate IndexNow verification key for site.
-      summary: Get or generate IndexNow key for site
+      description: Retrieve, generate, or rotate an IndexNow key for a site.
+      summary: Get active IndexNow key for site
       parameters:
       - in: path
         name: site_id
@@ -2632,7 +3119,7 @@ paths:
           description: ''
     post:
       operationId: workspaces_sites_integrations_indexnow_rotate_create
-      description: Retrieve or generate IndexNow verification key for site.
+      description: Retrieve, generate, or rotate an IndexNow key for a site.
       summary: Rotate IndexNow key for site
       parameters:
       - in: path
@@ -2694,8 +3181,9 @@ paths:
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/logs/:
     get:
       operationId: workspaces_sites_integrations_logs_list
-      description: List search engine indexing submission logs for site.
-      summary: List indexing submission logs
+      description: List historical indexing submission attempts with status and response
+        codes.
+      summary: List index submission logs
       parameters:
       - in: path
         name: site_id
@@ -2726,8 +3214,8 @@ paths:
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/integrations/submit/:
     post:
       operationId: workspaces_sites_integrations_submit_create
-      description: Manually submit article or page URLs to search engines (OPS-1).
-      summary: Submit URLs to search provider
+      description: Enqueues manual article or URL submissions to search engines.
+      summary: Submit URLs to search engines
       parameters:
       - in: path
         name: site_id
@@ -2760,7 +3248,7 @@ paths:
                 $ref: '#/components/schemas/IndexSubmissionLog'
           description: ''
         '400':
-          description: Invalid request
+          description: Invalid request or unverified domain
   /api/v1/workspaces/{workspace_id}/sites/{site_id}/redirects/:
     get:
       operationId: workspaces_sites_redirects_list
@@ -3558,6 +4046,25 @@ components:
       description: |-
         * `granted` - Granted
         * `denied` - Denied
+    GoogleTagSnippet:
+      type: object
+      description: Output serializer for Google Tag (gtag.js) snippet with Consent
+        Mode v2.
+      properties:
+        measurement_id:
+          type: string
+        tag_snippet:
+          type: string
+        consent_mode_v2_defaults:
+          type: object
+          additionalProperties: {}
+        copy_button_ready:
+          type: boolean
+          default: true
+      required:
+      - consent_mode_v2_defaults
+      - measurement_id
+      - tag_snippet
     IndexNowKey:
       type: object
       description: Serializer for IndexNow key hosted verification file.
@@ -3657,15 +4164,13 @@ components:
       properties:
         email:
           type: string
-          format: email
-          minLength: 1
         password:
           type: string
           writeOnly: true
-          minLength: 1
-      required:
-      - email
-      - password
+        token:
+          type: string
+          description: Optional Market Intel JWT access token for direct token-based
+            authentication.
     LogoutRequest:
       type: object
       properties:
@@ -3693,6 +4198,16 @@ components:
       required:
       - provider
       - urls
+    MarketIntelTokenExchangeRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Market Intel access token obtained via Market Intel OAuth or
+            login.
+      required:
+      - token
     MediaAsset:
       type: object
       properties:
@@ -4001,8 +4516,9 @@ components:
             off).
         retention_days:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           description: Event data retention window in days before automated pruning
             (7-730 days).
         require_consent:
@@ -4027,8 +4543,9 @@ components:
             * `GLOBAL_OPT_OUT` - Global Opt-out
         retention_days:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           description: Consent record retention duration in days (30 to 1095 days).
         cookie_domain:
           type: string
@@ -4633,8 +5150,9 @@ components:
             off).
         retention_days:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           description: Event data retention window in days before automated pruning
             (7-730 days).
         require_consent:
@@ -4679,8 +5197,9 @@ components:
             * `GLOBAL_OPT_OUT` - Global Opt-out
         retention_days:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           description: Consent record retention duration in days (30 to 1095 days).
         cookie_domain:
           type: string

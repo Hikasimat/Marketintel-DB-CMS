@@ -3,6 +3,13 @@
 from django.urls import path, re_path
 
 from apps.integrations.views import (
+    GoogleSearchConsoleAnalyticsView,
+    GoogleSearchConsoleAuthorizeView,
+    GoogleSearchConsoleCallbackView,
+    GoogleSearchConsoleDisconnectView,
+    GoogleSearchConsolePropertiesView,
+    GoogleSearchConsolePropertySelectView,
+    GoogleSearchConsoleSitemapsView,
     IndexNowKeyView,
     IndexSubmissionLogListView,
     ManualSubmissionView,
@@ -15,7 +22,43 @@ from apps.integrations.views import (
 app_name = "integrations"
 
 urlpatterns = [
-    # Management endpoints
+    # Google Search Console OAuth & Management
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/authorize/",
+        GoogleSearchConsoleAuthorizeView.as_view(),
+        name="gsc_authorize",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/callback/",
+        GoogleSearchConsoleCallbackView.as_view(),
+        name="gsc_callback",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/disconnect/",
+        GoogleSearchConsoleDisconnectView.as_view(),
+        name="gsc_disconnect",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/properties/",
+        GoogleSearchConsolePropertiesView.as_view(),
+        name="gsc_properties",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/properties/select/",
+        GoogleSearchConsolePropertySelectView.as_view(),
+        name="gsc_property_select",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/search-analytics/",
+        GoogleSearchConsoleAnalyticsView.as_view(),
+        name="gsc_analytics",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/google/sitemaps/",
+        GoogleSearchConsoleSitemapsView.as_view(),
+        name="gsc_sitemaps",
+    ),
+    # Existing search engine connections
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/connections/",
         SearchConnectionListCreateView.as_view(),
@@ -26,6 +69,7 @@ urlpatterns = [
         SearchConnectionDetailView.as_view(),
         name="connection_detail",
     ),
+    # IndexNow keys and rotation
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/indexnow/",
         IndexNowKeyView.as_view(),
@@ -36,6 +80,7 @@ urlpatterns = [
         IndexNowKeyView.as_view(),
         name="indexnow_rotate",
     ),
+    # Submission logs and URL Inspection
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/integrations/logs/",
         IndexSubmissionLogListView.as_view(),

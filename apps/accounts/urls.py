@@ -6,6 +6,7 @@ from apps.accounts.views import (
     CurrentUserView,
     LoginView,
     LogoutView,
+    MarketIntelTokenExchangeView,
     TokenRefreshView,
 )
 
@@ -13,6 +14,11 @@ app_name = "accounts"
 
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
+    path(
+        "auth/marketintel/exchange/",
+        MarketIntelTokenExchangeView.as_view(),
+        name="marketintel_exchange",
+    ),
     path("auth/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("auth/me/", CurrentUserView.as_view(), name="current_user"),

@@ -4,8 +4,14 @@ from django.urls import path
 
 from apps.analytics.views import (
     FirstPartyOverviewReportView,
+    GA4AuthorizeView,
+    GA4CallbackView,
     GA4ConnectionView,
+    GA4DisconnectView,
+    GA4PropertiesListView,
+    GA4PropertySelectView,
     GA4ReportView,
+    GoogleTagSnippetView,
     PublicAnalyticsConfigView,
     PublicEventIngestView,
     SiteAnalyticsConfigView,
@@ -15,7 +21,40 @@ from apps.analytics.views import (
 app_name = "analytics"
 
 urlpatterns = [
-    # Management endpoints
+    # Google Tag (gtag.js) Snippet Generator with Consent Mode v2
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/tag/",
+        GoogleTagSnippetView.as_view(),
+        name="tag_snippet",
+    ),
+    # GA4 OAuth 2.0 Authorization Code Flow
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/google/authorize/",
+        GA4AuthorizeView.as_view(),
+        name="ga4_authorize",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/google/callback/",
+        GA4CallbackView.as_view(),
+        name="ga4_callback",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/google/disconnect/",
+        GA4DisconnectView.as_view(),
+        name="ga4_disconnect",
+    ),
+    # GA4 Properties and Streams Discovery
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/properties/",
+        GA4PropertiesListView.as_view(),
+        name="ga4_properties",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/properties/select/",
+        GA4PropertySelectView.as_view(),
+        name="ga4_property_select",
+    ),
+    # Analytics Configuration & GA4 Connection
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/config/",
         SiteAnalyticsConfigView.as_view(),
@@ -26,11 +65,13 @@ urlpatterns = [
         GA4ConnectionView.as_view(),
         name="ga4_connection",
     ),
+    # GA4 Reports (overview, acquisition, pages, audience, events, realtime)
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/reports/ga4/",
         GA4ReportView.as_view(),
         name="ga4_reports",
     ),
+    # First-Party privacy-preserving metrics & GDPR erasure
     path(
         "workspaces/<uuid:workspace_id>/sites/<uuid:site_id>/analytics/first-party/overview/",
         FirstPartyOverviewReportView.as_view(),
